@@ -84,7 +84,7 @@ const Patients: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors">
-                        {patient.firstName[0]}{patient.lastName[0]}
+                        {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
                       </div>
                       <div>
                         <p className="font-semibold text-sm">{patient.lastName} {patient.firstName}</p>

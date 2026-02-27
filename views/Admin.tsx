@@ -73,7 +73,7 @@ const Admin: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
-                        {user.firstName[0]}{user.lastName[0]}
+                        {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
                       </div>
                       <div>
                         <p className="font-semibold text-sm">{user.lastName} {user.firstName}</p>

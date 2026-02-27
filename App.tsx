@@ -14,9 +14,10 @@ import PatientDetail from './views/PatientDetail';
 import PatientPortal from './views/PatientPortal';
 import { AppProvider, useStore } from './store';
 import { PatientCategory, AppointmentType, UserRole, UserPermission } from './types';
-import { Settings, LogOut, User as UserIcon, ShieldAlert } from 'lucide-react';
+import { Settings, LogOut, User as UserIcon, ShieldAlert, User, Mail, Phone, MapPin, CreditCard, Calendar, Stethoscope, AlertCircle, X } from 'lucide-react';
 
 const Sidebar = () => {
+// ... (rest of Sidebar code)
   const location = useLocation();
   const { notifications, currentUser } = useStore();
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -63,9 +64,9 @@ const Sidebar = () => {
       {currentUser && (
         <div className="p-4 border-t border-slate-100">
           <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl">
-            <div className="w-10 h-10 rounded-full bg-sky-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-              {currentUser.firstName[0]}{currentUser.lastName[0]}
-            </div>
+              <div className="w-10 h-10 rounded-full bg-sky-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                {currentUser.firstName?.charAt(0)}{currentUser.lastName?.charAt(0)}
+              </div>
             <div className="flex-1 overflow-hidden hidden md:block">
               <p className="text-sm font-semibold truncate">{currentUser.firstName} {currentUser.lastName}</p>
               <p className="text-xs text-slate-500 truncate">{currentUser.role}</p>
@@ -80,6 +81,8 @@ const Sidebar = () => {
 const PatientModal = () => {
   const { isPatientModalOpen, setPatientModalOpen, addPatient } = useStore();
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+
   if (!isPatientModalOpen) return null;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -90,8 +93,15 @@ const PatientModal = () => {
       lastName: formData.get('lastName') as string,
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
+      gender: formData.get('gender') as 'Homme' | 'Femme' | 'Autre',
       cin: formData.get('cin') as string,
+      socialSecurityNumber: formData.get('socialSecurityNumber') as string,
       birthDate: formData.get('birthDate') as string,
+      address: formData.get('address') as string,
+      city: formData.get('city') as string,
+      postalCode: formData.get('postalCode') as string,
+      emergencyContactName: formData.get('emergencyContactName') as string,
+      emergencyContactPhone: formData.get('emergencyContactPhone') as string,
       category: formData.get('category') as PatientCategory,
       mutuelleName: formData.get('mutuelleName') as string || undefined,
       prescribingDoctor: formData.get('prescribingDoctor') as string,
@@ -111,90 +121,195 @@ const PatientModal = () => {
       }
     });
     setPatientModalOpen(false);
+    setStep(1);
     navigate(`/patients/${newPatient.id}`);
   };
 
+  const InputWrapper = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
+        <Icon size={12} className="text-sky-500" />
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl my-8">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white rounded-t-2xl z-10">
-          <h3 className="text-xl font-bold">Ajouter un nouveau Patient</h3>
-          <button onClick={() => setPatientModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-3xl shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-300">
+        {/* Header */}
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-sky-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-200">
+              <User size={24} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Nouveau Dossier Patient</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Étape {step} sur 3</p>
+            </div>
+          </div>
+          <button onClick={() => setPatientModalOpen(false)} className="p-3 hover:bg-white hover:shadow-md rounded-2xl transition-all text-slate-400 hover:text-red-500">
+            <X size={20} strokeWidth={3} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom de famille</label>
-              <input required name="lastName" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none" placeholder="ex: Durand" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prénom</label>
-              <input required name="firstName" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none" placeholder="ex: Thomas" />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email professionnel ou perso</label>
-              <input required name="email" type="email" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none" placeholder="contact@email.fr" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Téléphone</label>
-              <input required name="phone" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none" placeholder="06 12 34 56 78" />
-            </div>
+
+        <form onSubmit={handleSubmit} className="p-8">
+          {/* Progress Bar */}
+          <div className="flex gap-2 mb-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= i ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.3)]' : 'bg-slate-100'}`} />
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CIN (Carte d'Identité)</label>
-              <input name="cin" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none" placeholder="ex: AB123456" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date de naissance</label>
-              <input required name="birthDate" type="date" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none" />
-            </div>
+          <div className="min-h-[400px]">
+            {step === 1 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputWrapper label="Nom de famille" icon={User}>
+                    <input required name="lastName" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: DURAND" />
+                  </InputWrapper>
+                  <InputWrapper label="Prénom" icon={User}>
+                    <input required name="firstName" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: Thomas" />
+                  </InputWrapper>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
+                    <User size={12} className="text-sky-500" />
+                    Genre
+                  </label>
+                  <div className="flex gap-4">
+                    {['Homme', 'Femme', 'Autre'].map((g) => (
+                      <label key={g} className="flex-1 cursor-pointer group">
+                        <input type="radio" name="gender" value={g} className="hidden peer" defaultChecked={g === 'Homme'} />
+                        <div className="py-3 text-center rounded-2xl border-2 border-slate-100 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-600 font-bold text-slate-500 group-hover:bg-slate-50 transition-all">
+                          {g}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputWrapper label="Date de naissance" icon={Calendar}>
+                    <input required name="birthDate" type="date" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" />
+                  </InputWrapper>
+                  <InputWrapper label="CIN / Passeport" icon={CreditCard}>
+                    <input name="cin" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: AB123456" />
+                  </InputWrapper>
+                </div>
+
+                <InputWrapper label="Numéro de Sécurité Sociale (NIR)" icon={ShieldAlert}>
+                  <input name="socialSecurityNumber" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="1 85 06 75 123 456 78" />
+                </InputWrapper>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputWrapper label="Email" icon={Mail}>
+                    <input required name="email" type="email" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="contact@email.fr" />
+                  </InputWrapper>
+                  <InputWrapper label="Téléphone" icon={Phone}>
+                    <input required name="phone" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="06 12 34 56 78" />
+                  </InputWrapper>
+                </div>
+
+                <InputWrapper label="Adresse complète" icon={MapPin}>
+                  <input name="address" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="12 rue de la Paix" />
+                </InputWrapper>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputWrapper label="Code Postal" icon={MapPin}>
+                    <input name="postalCode" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="75001" />
+                  </InputWrapper>
+                  <InputWrapper label="Ville" icon={MapPin}>
+                    <input name="city" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Paris" />
+                  </InputWrapper>
+                </div>
+
+                <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                    <AlertCircle size={14} />
+                    Contact d'urgence
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input name="emergencyContactName" className="w-full px-5 py-3 bg-white rounded-xl border-none focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold" placeholder="Nom du contact" />
+                    <input name="emergencyContactPhone" className="w-full px-5 py-3 bg-white rounded-xl border-none focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold" placeholder="Téléphone" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputWrapper label="Couverture Mutuelle" icon={CreditCard}>
+                    <select name="category" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700 appearance-none">
+                      <option value={PatientCategory.MUTUALISTE}>Mutualiste</option>
+                      <option value={PatientCategory.HORS_MUTUELLE}>Hors Mutuelle (HN)</option>
+                    </select>
+                  </InputWrapper>
+                  <InputWrapper label="Médecin Prescripteur" icon={Stethoscope}>
+                    <input required name="prescribingDoctor" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Dr. Martin" />
+                  </InputWrapper>
+                </div>
+
+                <InputWrapper label="Motif de consultation / Pathologie" icon={AlertCircle}>
+                  <textarea required name="pathology" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none h-32 resize-none font-bold text-slate-700" placeholder="Décrivez brièvement le diagnostic initial..."></textarea>
+                </InputWrapper>
+
+                <div className="bg-sky-50 p-6 rounded-[2rem] border border-sky-100 space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="relative flex items-center h-5">
+                      <input 
+                        required 
+                        type="checkbox" 
+                        name="consentRGPD" 
+                        id="consentRGPD"
+                        className="w-5 h-5 text-sky-600 bg-white border-slate-300 rounded-lg focus:ring-sky-500" 
+                      />
+                    </div>
+                    <label htmlFor="consentRGPD" className="text-xs text-slate-600 leading-relaxed font-medium">
+                      <span className="font-black text-sky-900 block mb-1 uppercase tracking-widest">Consentement RGPD & Médical</span>
+                      Je confirme que le patient a été informé du traitement de ses données personnelles et qu'il accepte que ses informations médicales soient conservées de manière sécurisée dans le cadre de son suivi de soins.
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Couverture Mutuelle</label>
-              <select name="category" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none">
-                <option value={PatientCategory.MUTUALISTE}>Mutualiste</option>
-                <option value={PatientCategory.HORS_MUTUELLE}>Hors Mutuelle (HN)</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Médecin Prescripteur</label>
-              <input required name="prescribingDoctor" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none" placeholder="Dr. Nom du Médecin" />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Motif de consultation / Pathologie</label>
-            <textarea required name="pathology" className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-transparent focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all outline-none h-24 resize-none" placeholder="Décrivez brièvement le diagnostic initial..."></textarea>
-          </div>
-
-          <div className="bg-sky-50/50 p-4 rounded-xl border border-sky-100 space-y-3">
-            <div className="flex items-start gap-3">
-              <input 
-                required 
-                type="checkbox" 
-                name="consentRGPD" 
-                id="consentRGPD"
-                className="mt-1 w-4 h-4 text-sky-600 bg-white border-slate-300 rounded focus:ring-sky-500" 
-              />
-              <label htmlFor="consentRGPD" className="text-xs text-slate-600 leading-relaxed">
-                <span className="font-bold text-sky-900 block mb-1">Consentement RGPD</span>
-                Je confirme que le patient a été informé du traitement de ses données personnelles et qu'il accepte que ses informations médicales soient conservées de manière sécurisée dans le cadre de son suivi de soins.
-              </label>
-            </div>
-          </div>
-
-          <div className="pt-4 flex flex-col md:flex-row gap-3">
-            <button type="button" onClick={() => setPatientModalOpen(false)} className="flex-1 px-6 py-3 border border-slate-200 rounded-xl font-semibold hover:bg-slate-50 transition-colors">Annuler</button>
-            <button type="submit" className="flex-1 px-6 py-3 bg-sky-600 text-white rounded-xl font-bold hover:bg-sky-700 transition-all shadow-lg shadow-sky-100 active:scale-95">Créer la fiche patient</button>
+          {/* Footer Actions */}
+          <div className="pt-8 flex gap-4">
+            {step > 1 && (
+              <button 
+                type="button" 
+                onClick={() => setStep(prev => prev - 1)} 
+                className="px-8 py-4 border-2 border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
+              >
+                Précédent
+              </button>
+            )}
+            <div className="flex-1" />
+            {step < 3 ? (
+              <button 
+                type="button" 
+                onClick={() => setStep(prev => prev + 1)} 
+                className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-black transition-all active:scale-95"
+              >
+                Suivant
+              </button>
+            ) : (
+              <button 
+                type="submit" 
+                className="px-12 py-4 bg-sky-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-sky-200 hover:bg-sky-700 transition-all active:scale-95"
+              >
+                Créer le dossier
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -482,7 +597,7 @@ const Layout = () => {
               className="flex items-center gap-2 p-1.5 pr-4 bg-white border border-slate-200 rounded-2xl hover:border-sky-200 transition-all"
             >
               <div className="w-8 h-8 rounded-full bg-sky-600 flex items-center justify-center text-white text-xs font-bold">
-                {currentUser.firstName[0]}{currentUser.lastName[0]}
+                {currentUser.firstName?.charAt(0)}{currentUser.lastName?.charAt(0)}
               </div>
               <span className="text-sm font-semibold hidden sm:inline">{currentUser.firstName}</span>
             </button>

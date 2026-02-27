@@ -5,7 +5,7 @@ import { Patient, PatientCategory, SessionNote, UserRole, UserPermission } from 
 import { generateClinicalReport } from '../geminiService';
 import { useStore } from '../store';
 import BilanDiagnostic from './BilanDiagnostic';
-import { FileDown, Sparkles, ChevronLeft, Clock } from 'lucide-react';
+import { FileDown, Sparkles, ChevronLeft, Clock, User, MapPin, AlertCircle, Stethoscope } from 'lucide-react';
 import { exportEvaluationToPDF } from '../src/utils/pdfExport';
 
 const mockNotes: SessionNote[] = [
@@ -143,23 +143,39 @@ const PatientDetail: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
             <div className="w-24 h-24 mx-auto bg-sky-100 rounded-full flex items-center justify-center text-3xl font-bold text-sky-600 mb-4">
-              {patient.firstName[0]}{patient.lastName[0]}
+              {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
             </div>
             <div className="text-center space-y-1 mb-6">
               <p className="font-bold text-lg">{patient.firstName} {patient.lastName}</p>
-              <p className="text-xs text-slate-400">{patient.birthDate}</p>
+              <div className="flex items-center justify-center gap-2">
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-tighter ${
+                  patient.gender === 'Homme' ? 'bg-blue-50 text-blue-600' : 
+                  patient.gender === 'Femme' ? 'bg-pink-50 text-pink-600' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {patient.gender}
+                </span>
+                <p className="text-xs text-slate-400">{patient.birthDate}</p>
+              </div>
             </div>
             
             <div className="space-y-4 pt-4 border-t border-slate-50">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">CIN</p>
-                <p className="text-sm font-medium">{patient.cin || 'Non renseigné'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">CIN / NIR</p>
+                <p className="text-sm font-medium">{patient.cin || '---'}</p>
+                {patient.socialSecurityNumber && <p className="text-[10px] text-slate-400 font-mono">{patient.socialSecurityNumber}</p>}
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Contact</p>
                 <p className="text-sm font-medium">{patient.phone}</p>
                 <p className="text-sm text-slate-500">{patient.email}</p>
               </div>
+              {patient.address && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Adresse</p>
+                  <p className="text-sm font-medium leading-tight">{patient.address}</p>
+                  <p className="text-xs text-slate-500">{patient.postalCode} {patient.city}</p>
+                </div>
+              )}
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Médecin Prescripteur</p>
                 <p className="text-sm font-medium">{patient.prescribingDoctor}</p>
@@ -271,27 +287,72 @@ const PatientDetail: React.FC = () => {
             <div className="p-6">
               {activeTab === 'medical' && (
                 <div className="space-y-8 animate-in fade-in duration-500">
-                  <section className="space-y-4">
-                    <h4 className="font-bold flex items-center gap-2">
-                      <div className="w-2 h-6 bg-sky-500 rounded-full"></div>
-                      Évaluation Initiale (Identité & Prescriptions)
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-100">
-                         <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase">Motif de consultation</p>
-                          <p className="text-sm font-medium">{patient.pathology}</p>
+                  <section className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold flex items-center gap-2">
+                        <div className="w-2 h-6 bg-sky-500 rounded-full"></div>
+                        Informations Administratives
+                      </h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                          <User size={14} className="text-sky-500" />
+                          Identité
+                        </p>
+                        <div className="space-y-2">
+                          <p className="text-sm font-bold text-slate-700">{patient.lastName} {patient.firstName}</p>
+                          <p className="text-xs text-slate-500">Né(e) le {patient.birthDate} ({patient.gender})</p>
+                          <p className="text-xs text-slate-500">CIN: {patient.cin || '---'}</p>
+                          <p className="text-xs text-slate-500 font-mono">NIR: {patient.socialSecurityNumber || '---'}</p>
                         </div>
                       </div>
-                       <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-100">
-                         <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase">Antécédents</p>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {patient.antecedents.map((a, i) => (
-                              <span key={i} className="px-2 py-1 bg-white border border-slate-200 text-xs rounded-lg text-slate-600 font-medium">{a}</span>
-                            ))}
-                            {patient.antecedents.length === 0 && <span className="text-xs text-slate-400 italic">Aucun antécédent noté.</span>}
-                          </div>
+
+                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                          <MapPin size={14} className="text-sky-500" />
+                          Coordonnées
+                        </p>
+                        <div className="space-y-2">
+                          <p className="text-xs text-slate-500">{patient.address || 'Adresse non renseignée'}</p>
+                          <p className="text-xs text-slate-500">{patient.postalCode} {patient.city}</p>
+                          <p className="text-xs font-bold text-slate-700 mt-2">{patient.phone}</p>
+                          <p className="text-xs text-sky-600">{patient.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 space-y-4">
+                        <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                          <AlertCircle size={14} />
+                          Urgence
+                        </p>
+                        <div className="space-y-2">
+                          <p className="text-xs font-bold text-slate-700">{patient.emergencyContactName || 'Non renseigné'}</p>
+                          <p className="text-xs text-slate-500">{patient.emergencyContactPhone || '---'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                          <Stethoscope size={14} className="text-sky-500" />
+                          Motif de consultation
+                        </p>
+                        <p className="text-sm font-medium text-slate-700 leading-relaxed">{patient.pathology}</p>
+                      </div>
+                      
+                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                          <AlertCircle size={14} className="text-sky-500" />
+                          Antécédents
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {patient.antecedents.map((a, i) => (
+                            <span key={i} className="px-3 py-1.5 bg-white border border-slate-200 text-[10px] font-bold rounded-xl text-slate-600 uppercase">{a}</span>
+                          ))}
+                          {patient.antecedents.length === 0 && <span className="text-xs text-slate-400 italic">Aucun antécédent noté.</span>}
                         </div>
                       </div>
                     </div>

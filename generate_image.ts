@@ -19,11 +19,16 @@ async function generateAndLogImage() {
       },
     });
 
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        console.log("IMAGE_START");
-        console.log(part.inlineData.data);
-        console.log("IMAGE_END");
+    const candidates = response.candidates || [];
+    for (const candidate of candidates) {
+      if (candidate.content && candidate.content.parts) {
+        for (const part of candidate.content.parts) {
+          if (part.inlineData) {
+            console.log("IMAGE_START");
+            console.log(part.inlineData.data);
+            console.log("IMAGE_END");
+          }
+        }
       }
     }
   } catch (e) {

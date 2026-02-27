@@ -81,8 +81,15 @@ export interface Gamification {
 
 export interface Patient extends User {
   birthDate: string;
+  gender: 'Homme' | 'Femme' | 'Autre';
   phone: string;
   cin?: string;
+  socialSecurityNumber?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   category: PatientCategory;
   mutuelleName?: string;
   prescribingDoctor: string;

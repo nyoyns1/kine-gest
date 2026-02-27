@@ -383,11 +383,16 @@ const BodyChart = React.forwardRef<BodyChartHandle, {}>((props, ref) => {
         },
       });
 
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          setAnatomicalImage(`data:image/png;base64,${part.inlineData.data}`);
-          showToast("Planche anatomique générée par IA (NanoBanan)");
-          break;
+      const candidates = response.candidates || [];
+      for (const candidate of candidates) {
+        if (candidate.content && candidate.content.parts) {
+          for (const part of candidate.content.parts) {
+            if (part.inlineData) {
+              setAnatomicalImage(`data:image/png;base64,${part.inlineData.data}`);
+              showToast("Planche anatomique générée par IA (NanoBanan)");
+              return; // Exit both loops
+            }
+          }
         }
       }
     } catch (error) {
