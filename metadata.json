@@ -1,7 +1,4 @@
 {
   "name": "KinéGest Pro",
   "description": "Une solution complète de gestion de cabinet de kinésithérapie avec suivi patient, agenda interactif, bilans assistés par IA et facturation.",
-  "requestFramePermissions": [
-    "camera"
-  ]
 }

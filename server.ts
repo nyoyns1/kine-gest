@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction } from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -33,10 +32,9 @@ const checkRole = (allowedRoles: UserRole[]) => {
   };
 };
 
-async function startServer() {
-  const app = express();
-  const PORT = parseInt(process.env.PORT || "3000");
+const app = express();
 
+async function configureServer() {
   app.use(express.json());
 
   // API Routes with Role protection
@@ -62,23 +60,43 @@ async function startServer() {
     ]);
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  // Vite middleware for development (only if not on Vercel)
+  if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
+    const distPath = path.join(__dirname, "dist");
+    app.use(express.static(distPath));
+    // Note: Vercel routes handle the SPA fallback via vercel.json
+    // but we keep this for other production environments
     app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
+      if (require("fs").existsSync(path.join(distPath, "index.html"))) {
+        res.sendFile(path.join(distPath, "index.html"));
+      } else {
+        res.status(404).send("Not found");
+      }
     });
   }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
 }
 
-startServer();
+// Export for Vercel
+export default app;
+
+// Local startup
+if (!process.env.VERCEL) {
+  configureServer().then(() => {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }).catch(err => {
+    console.error("Failed to start server:", err);
+  });
+} else {
+  // On Vercel, we need to ensure routes are configured
+  configureServer();
+}
