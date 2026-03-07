@@ -66,6 +66,8 @@ interface AppContextType {
   reportPatientDelay: (patientId: string) => void;
   updatePatient: (id: string, updates: Partial<Patient>) => void;
   resetPassword: (userId: string, newPassword?: string) => void;
+  isLoaded: boolean;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -262,7 +264,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       [UserRole.PATIENT]: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA]
     };
 
-    let initialUsers = [
+    let initialUsers: User[] = [
       { id: 'u1', firstName: 'Jean', lastName: 'Dupont', email: 'reforme3334@gmail.com', password: 'admin', role: UserRole.ADMIN, isActive: true, permissions: defaultPermissions[UserRole.ADMIN] },
       { id: 'u2', firstName: 'Sarah', lastName: 'Lemoine', email: 'therapeute@kinegest.com', password: 'password', role: UserRole.THERAPEUTE, isActive: true, permissions: defaultPermissions[UserRole.THERAPEUTE] },
       { id: 'u3', firstName: 'Marc', lastName: 'Vasseur', email: 'secretaire@kinegest.com', password: 'password', role: UserRole.SECRETAIRE, isActive: true, permissions: defaultPermissions[UserRole.SECRETAIRE] },
@@ -282,7 +284,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       initialUsers[adminIndex].role = UserRole.ADMIN;
       initialUsers[adminIndex].permissions = defaultPermissions[UserRole.ADMIN];
     } else {
-      initialUsers.push({ id: 'u1', firstName: 'Jean', lastName: 'Dupont', email: 'reforme3334@gmail.com', role: UserRole.ADMIN, isActive: true, permissions: defaultPermissions[UserRole.ADMIN] });
+      initialUsers.push({ id: 'u1', firstName: 'Jean', lastName: 'Dupont', email: 'reforme3334@gmail.com', password: 'admin', role: UserRole.ADMIN, isActive: true, permissions: defaultPermissions[UserRole.ADMIN] });
     }
     
     return initialUsers;
@@ -307,13 +309,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   useEffect(() => {
     const loadFromBackend = async () => {
       try {
         const response = await fetch('/api/state');
+        if (!response.ok) throw new Error('Failed to fetch state');
         const data = await response.json();
+        
         if (data && Object.keys(data).length > 0) {
+          // Use functional updates to ensure we are working with latest state if needed,
+          // though here we are just initializing.
           if (data.patients) setPatients(data.patients);
           if (data.appointments) setAppointments(data.appointments);
           if (data.expenses) setExpenses(data.expenses);
@@ -325,10 +332,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (data.exercises) setExercises(data.exercises);
           if (data.messages) setMessages(data.messages);
         }
+        setTimeout(() => setIsLoaded(true), 100);
       } catch (error) {
         console.error("Failed to load state from backend:", error);
+        showToast("Erreur de synchronisation. Vérifiez votre connexion.");
+        // We don't set isLoaded to true here to prevent overwriting server data with defaults
       } finally {
-        setIsLoaded(true);
+        // We only set isLoaded if we actually got a response (even if empty)
+        // If it failed completely, we stay in loading state to protect data
       }
     };
     loadFromBackend();
@@ -338,20 +349,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!isLoaded) return;
 
     const saveToBackend = async () => {
+      setSaveStatus('saving');
       try {
-        await fetch('/api/state', {
+        const response = await fetch('/api/state', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             patients, appointments, expenses, invoices, assessments, sessionNotes, notifications, users, exercises, messages
-          })
+          }),
+          keepalive: true // Important for saving on close
         });
+        if (!response.ok) throw new Error('Failed to save state');
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (error) {
         console.error("Failed to save state to backend:", error);
+        setSaveStatus('error');
+        showToast("Erreur lors de la sauvegarde sur le serveur");
       }
     };
 
-    const timeout = setTimeout(saveToBackend, 1000);
+    const timeout = setTimeout(saveToBackend, 500); // Shorter debounce
     return () => clearTimeout(timeout);
   }, [isLoaded, patients, appointments, expenses, invoices, assessments, sessionNotes, notifications, users, exercises, messages]);
 
@@ -973,7 +991,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       selectedPatientId, setSelectedPatientId,
       prefilledDate, setPrefilledDate,
       prefilledTime, setPrefilledTime,
-      exercises, messages, completeExercise, sendMessage, awardPoints, reportPatientDelay, updatePatient, resetPassword
+      exercises, messages, completeExercise, sendMessage, awardPoints, reportPatientDelay, updatePatient, resetPassword,
+      isLoaded, saveStatus
     }}>
       {children}
     </AppContext.Provider>

@@ -596,16 +596,34 @@ const NotificationCenter = () => {
 };
 
 const Layout = () => {
-  const { currentUser, logout } = useStore();
+  const { currentUser, logout, isLoaded, saveStatus } = useStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (!currentUser && location.pathname !== '/login' && location.pathname !== '/register') {
+    if (isLoaded && !currentUser && location.pathname !== '/login' && location.pathname !== '/register') {
       navigate('/login');
     }
-  }, [currentUser, navigate, location.pathname]);
+  }, [currentUser, navigate, location.pathname, isLoaded]);
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 border-4 border-sky-100 border-t-sky-600 rounded-full animate-spin mb-6"></div>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Chargement de KinéGest...</h2>
+        <p className="text-slate-500 text-center max-w-xs mb-8">
+          Nous synchronisons vos données avec le serveur pour vous garantir une expérience fluide.
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-white border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   if (!currentUser) return null;
 
@@ -624,9 +642,30 @@ const Layout = () => {
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 px-4 md:px-8 py-4 flex justify-end items-center gap-4">
-          <NotificationCenter />
-          <div className="relative">
+        <div className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 px-4 md:px-8 py-4 flex justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            {saveStatus === 'saving' && (
+              <div className="flex items-center gap-2 text-slate-400 animate-pulse">
+                <div className="w-2 h-2 bg-sky-500 rounded-full"></div>
+                <span className="text-xs font-medium">Sauvegarde...</span>
+              </div>
+            )}
+            {saveStatus === 'saved' && (
+              <div className="flex items-center gap-2 text-emerald-500">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span className="text-xs font-medium">Enregistré</span>
+              </div>
+            )}
+            {saveStatus === 'error' && (
+              <div className="flex items-center gap-2 text-red-500">
+                <ShieldAlert size={14} />
+                <span className="text-xs font-medium">Erreur de sauvegarde</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+            <NotificationCenter />
+            <div className="relative">
             <button 
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className="flex items-center gap-2 p-1.5 pr-4 bg-white border border-slate-200 rounded-2xl hover:border-sky-200 transition-all"
@@ -653,7 +692,8 @@ const Layout = () => {
             )}
           </div>
         </div>
-        <div className="max-w-7xl mx-auto p-4 md:p-8 pt-0 md:pt-0">
+      </div>
+      <div className="max-w-7xl mx-auto p-4 md:p-8 pt-0 md:pt-0">
           <Routes>
             <Route path="/" element={(currentUser.permissions || []).includes(UserPermission.VIEW_DASHBOARD) ? <Dashboard /> : <Agenda />} />
             <Route path="/patients" element={(currentUser.permissions || []).includes(UserPermission.MANAGE_PATIENTS) ? <Patients /> : <Agenda />} />
