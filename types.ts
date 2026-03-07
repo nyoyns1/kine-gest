@@ -22,6 +22,7 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
+  password?: string;
   role: UserRole;
   isActive: boolean;
   permissions: UserPermission[];

@@ -85,13 +85,16 @@ const PatientPortal: React.FC = () => {
 
   const evolutionData = useMemo(() => {
     if (!patient) return [];
-    const patientAssessments = assessments.filter(a => a.patientId === patient.id);
+    const patientAssessments = assessments
+      .filter(a => a.patientId === patient.id)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
     return patientAssessments.map(a => ({
-      date: format(parseISO(a.date), 'dd MMM', { locale: fr }),
-      pain: a.pain.eva,
-      mobility: a.jointTests[0]?.value || 0,
-      strength: a.muscleTests[0]?.force || 0
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      date: a.date ? format(parseISO(a.date), 'dd MMM', { locale: fr }) : '---',
+      pain: a.pain?.eva || 0,
+      mobility: a.jointTests?.[0]?.value || 0,
+      strength: a.muscleTests?.[0]?.force || 0
+    }));
   }, [patient, assessments]);
 
   const handleSendMessage = (e: React.FormEvent) => {

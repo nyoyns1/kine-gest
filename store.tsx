@@ -24,6 +24,7 @@ interface AppContextType {
   login: (email: string, password?: string) => boolean;
   logout: () => void;
   registerPatient: (userData: Omit<User, 'id' | 'role' | 'isActive' | 'permissions'>) => void;
+  createAccountForExistingPatient: (patientId: string) => void;
   addEmployee: (userData: Omit<User, 'id' | 'isActive' | 'permissions'>) => void;
   updateUserRole: (userId: string, role: UserRole) => void;
   updateUserPermissions: (userId: string, permissions: UserPermission[]) => void;
@@ -31,7 +32,7 @@ interface AppContextType {
   deleteAppointment: (id: string) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
   cancelAppointment: (id: string) => void;
-  addPatient: (patient: Omit<Patient, 'id' | 'createdAt'>) => Patient;
+  addPatient: (patient: Omit<Patient, 'id' | 'createdAt' | 'role' | 'isActive' | 'permissions'>, createAccount?: boolean) => Patient;
   addAppointment: (appointment: Omit<Appointment, 'id' | 'status'>) => void;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   addInvoice: (invoice: Omit<Invoice, 'id'>) => void;
@@ -63,6 +64,8 @@ interface AppContextType {
   sendMessage: (content: string, receiverId: string, imageUrl?: string) => void;
   awardPoints: (patientId: string, amount: number, reason: string) => void;
   reportPatientDelay: (patientId: string) => void;
+  updatePatient: (id: string, updates: Partial<Patient>) => void;
+  resetPassword: (userId: string, newPassword?: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -242,10 +245,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     let initialUsers = saved ? JSON.parse(saved) : [
-      { id: 'u1', firstName: 'Jean', lastName: 'Dupont', email: 'reforme3334@gmail.com', role: UserRole.ADMIN, isActive: true, permissions: defaultPermissions[UserRole.ADMIN] },
-      { id: 'u2', firstName: 'Sarah', lastName: 'Lemoine', email: 'therapeute@kinegest.com', role: UserRole.THERAPEUTE, isActive: true, permissions: defaultPermissions[UserRole.THERAPEUTE] },
-      { id: 'u3', firstName: 'Marc', lastName: 'Vasseur', email: 'secretaire@kinegest.com', role: UserRole.SECRETAIRE, isActive: true, permissions: defaultPermissions[UserRole.SECRETAIRE] },
-      { id: 'u4', firstName: 'Alice', lastName: 'Dubois', email: 'alice.dubois@mail.com', role: UserRole.PATIENT, isActive: true, permissions: defaultPermissions[UserRole.PATIENT] },
+      { id: 'u1', firstName: 'Jean', lastName: 'Dupont', email: 'reforme3334@gmail.com', password: 'admin', role: UserRole.ADMIN, isActive: true, permissions: defaultPermissions[UserRole.ADMIN] },
+      { id: 'u2', firstName: 'Sarah', lastName: 'Lemoine', email: 'therapeute@kinegest.com', password: 'password', role: UserRole.THERAPEUTE, isActive: true, permissions: defaultPermissions[UserRole.THERAPEUTE] },
+      { id: 'u3', firstName: 'Marc', lastName: 'Vasseur', email: 'secretaire@kinegest.com', password: 'password', role: UserRole.SECRETAIRE, isActive: true, permissions: defaultPermissions[UserRole.SECRETAIRE] },
+      { id: 'u4', firstName: 'Alice', lastName: 'Dubois', email: 'alice.dubois@mail.com', password: 'password', role: UserRole.PATIENT, isActive: true, permissions: defaultPermissions[UserRole.PATIENT] },
     ];
     
     // Ensure all users have permissions array (migration)
@@ -496,9 +499,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimeout(() => setToast(null), 3000);
   };
 
-  const addPatient = (newPatient: Omit<Patient, 'id' | 'createdAt'>) => {
+  const addPatient = (newPatient: Omit<Patient, 'id' | 'createdAt' | 'role' | 'isActive' | 'permissions'>, createAccount: boolean = false) => {
     const id = Math.random().toString(36).substr(2, 9);
     const patient: Patient = {
+      role: UserRole.PATIENT,
+      isActive: true,
+      permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
       ...newPatient,
       id,
       createdAt: new Date().toISOString(),
@@ -508,7 +514,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
     setPatients(prev => [...prev, patient]);
-    showToast("Patient ajouté avec succès");
+
+    if (createAccount) {
+      const defaultPermissions = [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA];
+      const newUser: User = {
+        id, // Use same ID for patient and user for easier linking
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        email: patient.email,
+        password: 'password',
+        role: UserRole.PATIENT,
+        isActive: true,
+        permissions: defaultPermissions
+      };
+      setUsers(prev => [...prev, newUser]);
+      showToast("Patient et compte utilisateur créés");
+    } else {
+      showToast("Patient ajouté avec succès");
+    }
+
     return patient;
   };
 
@@ -674,6 +698,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updatePatient = (id: string, updates: Partial<Patient>) => {
+    setPatients(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    showToast("Dossier patient mis à jour");
+  };
+
   const cancelAppointment = (id: string) => {
     console.log(`Tentative d'annulation du RDV: ${id}`);
     const app = appointments.find(a => a.id === id);
@@ -722,15 +751,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const login = (email: string, password?: string) => {
-    const user = users.find(u => u.email === email);
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     
-    // Password check for the admin account as requested
-    if (email === 'reforme3334@gmail.com' && password !== 're@forme1') {
-      showToast("Mot de passe incorrect pour l'administrateur");
-      return false;
-    }
-
     if (user && user.isActive) {
+      if (user.password && user.password !== password) {
+        showToast("Mot de passe incorrect");
+        return false;
+      }
       setCurrentUser(user);
       showToast(`Bienvenue, ${user.firstName}`);
       return true;
@@ -749,16 +776,80 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const registerPatient = (userData: Omit<User, 'id' | 'role' | 'isActive' | 'permissions'>) => {
+    const id = Math.random().toString(36).substr(2, 9);
     const newUser: User = {
       ...userData,
-      id: Math.random().toString(36).substr(2, 9),
+      id,
       role: UserRole.PATIENT,
       isActive: true,
       permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA]
     };
+    
+    // Also create a Patient record
+    const newPatient: Patient = {
+      id,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      role: UserRole.PATIENT,
+      isActive: true,
+      permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
+      phone: '',
+      gender: 'Autre',
+      birthDate: '',
+      category: PatientCategory.HORS_MUTUELLE,
+      prescribingDoctor: 'Non spécifié',
+      pathology: 'Nouveau patient (auto-enregistré)',
+      antecedents: [],
+      consentRGPD: true,
+      createdAt: new Date().toISOString(),
+      recoveryRate: 0,
+      satisfactionRate: 0,
+      totalSessionsPrescribed: 0,
+      sessionsRemaining: 0,
+      gamification: {
+        patientId: id,
+        points: 0,
+        delayCount: 0,
+        badges: [],
+        rewards: []
+      }
+    };
+
     setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    showToast("Compte créé avec succès");
+    setPatients(prev => [...prev, newPatient]);
+    
+    if (!currentUser) {
+      setCurrentUser(newUser);
+      showToast("Compte et dossier créés avec succès");
+    } else {
+      showToast("Compte patient créé avec succès");
+    }
+  };
+
+  const createAccountForExistingPatient = (patientId: string) => {
+    const patient = patients.find(p => p.id === patientId);
+    if (!patient) return;
+
+    // Check if user already exists
+    if (users.some(u => u.id === patientId || u.email === patient.email)) {
+      showToast("Un compte existe déjà pour ce patient");
+      return;
+    }
+
+    const newUser: User = {
+      id: patient.id,
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      email: patient.email,
+      password: 'password',
+      role: UserRole.PATIENT,
+      isActive: true,
+      permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA]
+    };
+
+    setUsers(prev => [...prev, newUser]);
+    showToast("Compte patient créé avec succès");
   };
 
   const addEmployee = (userData: Omit<User, 'id' | 'isActive' | 'permissions'>) => {
@@ -772,6 +863,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newUser: User = {
       ...userData,
       id: Math.random().toString(36).substr(2, 9),
+      password: userData.password || 'password',
       isActive: true,
       permissions: defaultPerms[userData.role] || []
     };
@@ -801,6 +893,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast("Statut utilisateur mis à jour");
   };
 
+  const resetPassword = (userId: string, newPassword?: string) => {
+    const password = newPassword || '123456';
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, password } : u));
+    showToast(`Mot de passe réinitialisé par défaut : ${password}`);
+  };
+
   return (
     <AppContext.Provider value={{ 
       patients, appointments, expenses, invoices, assessments, sessionNotes, notifications,
@@ -812,7 +910,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       selectedPatientId, setSelectedPatientId,
       prefilledDate, setPrefilledDate,
       prefilledTime, setPrefilledTime,
-      exercises, messages, completeExercise, sendMessage, awardPoints, reportPatientDelay
+      exercises, messages, completeExercise, sendMessage, awardPoints, reportPatientDelay, updatePatient, resetPassword
     }}>
       {children}
     </AppContext.Provider>

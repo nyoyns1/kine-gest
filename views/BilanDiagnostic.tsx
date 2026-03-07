@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../store';
 import { Assessment } from '../types';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
@@ -558,9 +558,15 @@ const BilanDiagnostic: React.FC<{ patientId: string }> = ({ patientId }) => {
     setJointTests(newTests);
   };
 
-  const patientAssessments = assessments
-    .filter(a => a.patientId === patientId)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const patientAssessments = useMemo(() => {
+    return assessments
+      .filter(a => a.patientId === patientId)
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateA - dateB;
+      });
+  }, [assessments, patientId]);
 
   const initialBilan = patientAssessments.find(a => a.type === 'Initial');
   const finalBilan = patientAssessments.find(a => a.type === 'Final') || patientAssessments[patientAssessments.length - 1];
@@ -575,35 +581,38 @@ const BilanDiagnostic: React.FC<{ patientId: string }> = ({ patientId }) => {
   };
 
   const getGlobalScore = (bilan: Assessment) => {
-    const painScore = (10 - bilan.pain.eva) * 10;
-    const muscleScore = bilan.muscleTests.length > 0 
-      ? (bilan.muscleTests.reduce((acc, m) => acc + m.force, 0) / (bilan.muscleTests.length * 5)) * 100 
+    if (!bilan || !bilan.pain || !bilan.functional) return "0";
+    const painScore = (10 - (bilan.pain.eva || 0)) * 10;
+    const muscleScore = (bilan.muscleTests || []).length > 0 
+      ? (bilan.muscleTests.reduce((acc, m) => acc + (m.force || 0), 0) / (bilan.muscleTests.length * 5)) * 100 
       : 0;
-    const jointScore = bilan.jointTests.length > 0
-      ? (bilan.jointTests.reduce((acc, j) => acc + (j.activeAmplitude || j.value), 0) / (bilan.jointTests.length * 180)) * 100
+    const jointScore = (bilan.jointTests || []).length > 0
+      ? (bilan.jointTests.reduce((acc, j) => acc + (j.activeAmplitude || j.value || 0), 0) / (bilan.jointTests.length * 180)) * 100
       : 0;
-    const functionalScore = bilan.functional.score;
-    const autonomyScore = (bilan.functional.upperLimb.total * 10);
+    const functionalScore = bilan.functional.score || 0;
+    const autonomyScore = ((bilan.functional.upperLimb?.total || 0) * 10);
     return ((painScore * 0.2 + (muscleScore || 0) * 0.2 + (jointScore || 0) * 0.2 + functionalScore * 0.2 + autonomyScore * 0.2)).toFixed(0);
   };
 
   const getMuscleScore = (bilan?: Assessment) => {
-    if (!bilan || bilan.muscleTests.length === 0) return 0;
-    return (bilan.muscleTests.reduce((acc, m) => acc + m.force, 0) / (bilan.muscleTests.length * 5)) * 100;
+    if (!bilan || !bilan.muscleTests || bilan.muscleTests.length === 0) return 0;
+    return (bilan.muscleTests.reduce((acc, m) => acc + (m.force || 0), 0) / (bilan.muscleTests.length * 5)) * 100;
   };
 
   const getJointScore = (bilan?: Assessment) => {
-    if (!bilan || bilan.jointTests.length === 0) return 0;
-    return (bilan.jointTests.reduce((acc, j) => acc + (j.activeAmplitude || j.value), 0) / (bilan.jointTests.length * 180)) * 100;
+    if (!bilan || !bilan.jointTests || bilan.jointTests.length === 0) return 0;
+    return (bilan.jointTests.reduce((acc, j) => acc + (j.activeAmplitude || j.value || 0), 0) / (bilan.jointTests.length * 180)) * 100;
   };
 
-  const radarData = [
-    { subject: 'Douleur', A: initialBilan ? (10 - initialBilan.pain.eva) * 10 : 0, B: finalBilan ? (10 - finalBilan.pain.eva) * 10 : 0, fullMark: 100, enabled: (initialBilan?.enabledSections?.pain !== false) || (finalBilan?.enabledSections?.pain !== false) },
-    { subject: 'Musculaire', A: getMuscleScore(initialBilan), B: getMuscleScore(finalBilan), fullMark: 100, enabled: (initialBilan?.enabledSections?.muscle !== false) || (finalBilan?.enabledSections?.muscle !== false) },
-    { subject: 'Articulaire', A: getJointScore(initialBilan), B: getJointScore(finalBilan), fullMark: 100, enabled: (initialBilan?.enabledSections?.joint !== false) || (finalBilan?.enabledSections?.joint !== false) },
-    { subject: 'Fonctionnel', A: initialBilan ? (initialBilan.functional.score) : 0, B: finalBilan ? (finalBilan.functional.score) : 0, fullMark: 100, enabled: (initialBilan?.enabledSections?.functional !== false) || (finalBilan?.enabledSections?.functional !== false) },
-    { subject: 'Autonomie', A: initialBilan ? (initialBilan.functional.upperLimb.total * 10) : 0, B: finalBilan ? (finalBilan.functional.upperLimb.total * 10) : 0, fullMark: 100, enabled: (initialBilan?.enabledSections?.functionalUpperLimb !== false) || (finalBilan?.enabledSections?.functionalUpperLimb !== false) },
-  ].filter(d => d.enabled);
+  const radarData = useMemo(() => {
+    return [
+      { subject: 'Douleur', A: initialBilan ? (10 - (initialBilan.pain?.eva || 0)) * 10 : 0, B: finalBilan ? (10 - (finalBilan.pain?.eva || 0)) * 10 : 0, fullMark: 100, enabled: (initialBilan?.enabledSections?.pain !== false) || (finalBilan?.enabledSections?.pain !== false) },
+      { subject: 'Musculaire', A: getMuscleScore(initialBilan), B: getMuscleScore(finalBilan), fullMark: 100, enabled: (initialBilan?.enabledSections?.muscle !== false) || (finalBilan?.enabledSections?.muscle !== false) },
+      { subject: 'Articulaire', A: getJointScore(initialBilan), B: getJointScore(finalBilan), fullMark: 100, enabled: (initialBilan?.enabledSections?.joint !== false) || (finalBilan?.enabledSections?.joint !== false) },
+      { subject: 'Fonctionnel', A: initialBilan ? (initialBilan.functional?.score || 0) : 0, B: finalBilan ? (finalBilan.functional?.score || 0) : 0, fullMark: 100, enabled: (initialBilan?.enabledSections?.functional !== false) || (finalBilan?.enabledSections?.functional !== false) },
+      { subject: 'Autonomie', A: initialBilan ? ((initialBilan.functional?.upperLimb?.total || 0) * 10) : 0, B: finalBilan ? ((finalBilan.functional?.upperLimb?.total || 0) * 10) : 0, fullMark: 100, enabled: (initialBilan?.enabledSections?.functionalUpperLimb !== false) || (finalBilan?.enabledSections?.functionalUpperLimb !== false) },
+    ].filter(d => d.enabled);
+  }, [initialBilan, finalBilan]);
 
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

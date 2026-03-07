@@ -11,27 +11,43 @@ const Dashboard: React.FC = () => {
   const { setPatientModalOpen, appointments, setSelectedPatientId, setAppointmentModalOpen, invoices, patients, currentUser } = useStore();
   const navigate = useNavigate();
 
-  const canManagePatients = currentUser?.permissions?.includes(UserPermission.MANAGE_PATIENTS);
-  const canManageAgenda = currentUser?.permissions?.includes(UserPermission.MANAGE_AGENDA);
-  const canManageBilling = currentUser?.permissions?.includes(UserPermission.MANAGE_BILLING);
-  const canViewStats = currentUser?.permissions?.includes(UserPermission.VIEW_STATS);
+  const canManagePatients = (currentUser?.permissions || []).includes(UserPermission.MANAGE_PATIENTS);
+  const canManageAgenda = (currentUser?.permissions || []).includes(UserPermission.MANAGE_AGENDA);
+  const canManageBilling = (currentUser?.permissions || []).includes(UserPermission.MANAGE_BILLING);
+  const canViewStats = (currentUser?.permissions || []).includes(UserPermission.VIEW_STATS);
 
   const pendingInvoices = invoices.filter(inv => inv.status === 'Impayé' || inv.status === 'En cours');
   
   // Calculate stats
-  const sessionsToday = appointments.filter(app => isSameDay(parseISO(app.date), new Date())).length;
+  const sessionsToday = appointments.filter(app => {
+    try {
+      return app.date && isSameDay(parseISO(app.date), new Date());
+    } catch (e) {
+      return false;
+    }
+  }).length;
   
   const currentMonthStart = startOfMonth(new Date());
   const currentMonthEnd = endOfMonth(new Date());
   
   const newPatientsThisMonth = patients.filter(p => {
-    const pDate = parseISO(p.createdAt);
-    return isWithinInterval(pDate, { start: currentMonthStart, end: currentMonthEnd });
+    try {
+      if (!p.createdAt) return false;
+      const pDate = parseISO(p.createdAt);
+      return isWithinInterval(pDate, { start: currentMonthStart, end: currentMonthEnd });
+    } catch (e) {
+      return false;
+    }
   }).length;
 
   const revenueThisMonth = invoices.filter(inv => {
-    const invDate = parseISO(inv.date);
-    return isWithinInterval(invDate, { start: currentMonthStart, end: currentMonthEnd });
+    try {
+      if (!inv.date) return false;
+      const invDate = parseISO(inv.date);
+      return isWithinInterval(invDate, { start: currentMonthStart, end: currentMonthEnd });
+    } catch (e) {
+      return false;
+    }
   }).reduce((acc, inv) => acc + inv.amount, 0);
 
   // Weekly activity data
@@ -39,7 +55,13 @@ const Dashboard: React.FC = () => {
     const days = Array.from({ length: 6 }, (_, i) => subDays(new Date(), 5 - i));
     return days.map(day => {
       const dayStr = format(day, 'EEE', { locale: fr });
-      const count = appointments.filter(app => isSameDay(parseISO(app.date), day)).length;
+      const count = appointments.filter(app => {
+        try {
+          return app.date && isSameDay(parseISO(app.date), day);
+        } catch (e) {
+          return false;
+        }
+      }).length;
       return { name: dayStr, patients: count };
     });
   }, [appointments]);

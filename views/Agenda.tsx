@@ -35,12 +35,19 @@ const Agenda: React.FC = () => {
   const [billingAppId, setBillingAppId] = useState<string | null>(null);
   const [sessionAmount, setSessionAmount] = useState<number>(300);
   const [confirmingCancelId, setConfirmingCancelId] = useState<string | null>(null);
+  const [patientFilter, setPatientFilter] = useState<string>('all');
 
   const getAppointmentsForSlot = (date: string, hour: string) => {
-    const slotApps = appointments.filter(app => app.date === date && app.startTime === hour);
+    let slotApps = appointments.filter(app => app.date === date && app.startTime === hour);
+    
     if (isPatient) {
       return slotApps.filter(app => app.patientId === currentPatient?.id);
     }
+
+    if (patientFilter !== 'all') {
+      slotApps = slotApps.filter(app => app.patientId === patientFilter);
+    }
+
     return slotApps;
   };
 
@@ -73,6 +80,18 @@ const Agenda: React.FC = () => {
           <p className="text-slate-500">Cliquez sur un créneau pour planifier. Cliquez sur le symbole "$" pour facturer.</p>
         </div>
         <div className="flex gap-2">
+          {!isPatient && (
+            <select
+              value={patientFilter}
+              onChange={(e) => setPatientFilter(e.target.value)}
+              className="bg-white border border-slate-200 rounded-xl px-4 py-1.5 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-sky-500 shadow-sm"
+            >
+              <option value="all">Tous les patients</option>
+              {patients.map(p => (
+                <option key={p.id} value={p.id}>{p.lastName} {p.firstName}</option>
+              ))}
+            </select>
+          )}
           <div className="bg-white border border-slate-200 rounded-xl flex p-1 shadow-sm">
             <button className="px-4 py-1.5 text-xs font-bold rounded-lg bg-sky-50 text-sky-600">Semaine</button>
             <button className="px-4 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50">Mois</button>

@@ -20,13 +20,23 @@ const Stats: React.FC = () => {
       const monthStr = format(month, 'MMM', { locale: fr });
 
       const monthInvoices = invoices.filter(inv => {
-        const invDate = parseISO(inv.date);
-        return isWithinInterval(invDate, { start, end });
+        try {
+          if (!inv.date) return false;
+          const invDate = parseISO(inv.date);
+          return isWithinInterval(invDate, { start, end });
+        } catch (e) {
+          return false;
+        }
       });
 
       const monthExpenses = expenses.filter(exp => {
-        const expDate = parseISO(exp.date);
-        return isWithinInterval(expDate, { start, end });
+        try {
+          if (!exp.date) return false;
+          const expDate = parseISO(exp.date);
+          return isWithinInterval(expDate, { start, end });
+        } catch (e) {
+          return false;
+        }
       });
 
       const revenue = monthInvoices.reduce((acc, inv) => acc + inv.amount, 0);
@@ -65,12 +75,17 @@ const Stats: React.FC = () => {
     };
 
     patients.forEach(p => {
-      const age = differenceInYears(new Date(), parseISO(p.birthDate));
-      if (age <= 18) ageGroups['0-18']++;
-      else if (age <= 35) ageGroups['19-35']++;
-      else if (age <= 50) ageGroups['36-50']++;
-      else if (age <= 70) ageGroups['51-70']++;
-      else ageGroups['70+']++;
+      try {
+        if (!p.birthDate) return;
+        const age = differenceInYears(new Date(), parseISO(p.birthDate));
+        if (age <= 18) ageGroups['0-18']++;
+        else if (age <= 35) ageGroups['19-35']++;
+        else if (age <= 50) ageGroups['36-50']++;
+        else if (age <= 70) ageGroups['51-70']++;
+        else ageGroups['70+']++;
+      } catch (e) {
+        // Skip invalid dates
+      }
     });
 
     const colors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb923c'];
@@ -91,15 +106,25 @@ const Stats: React.FC = () => {
       const monthStr = format(month, 'MMM', { locale: fr });
 
       const monthInvoices = invoices.filter(inv => {
-        const invDate = parseISO(inv.date);
-        return isWithinInterval(invDate, { start, end });
+        try {
+          if (!inv.date) return false;
+          const invDate = parseISO(inv.date);
+          return isWithinInterval(invDate, { start, end });
+        } catch (e) {
+          return false;
+        }
       });
 
       const monthRevenue = monthInvoices.reduce((acc, inv) => acc + inv.amount, 0);
       
       const monthNewPatients = patients.filter(p => {
-        const pDate = parseISO(p.createdAt);
-        return isWithinInterval(pDate, { start, end });
+        try {
+          if (!p.createdAt) return false;
+          const pDate = parseISO(p.createdAt);
+          return isWithinInterval(pDate, { start, end });
+        } catch (e) {
+          return false;
+        }
       }).length;
 
       return {

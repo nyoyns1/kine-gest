@@ -5,7 +5,7 @@ import { Patient, PatientCategory, SessionNote, UserRole, UserPermission } from 
 import { generateClinicalReport } from '../geminiService';
 import { useStore } from '../store';
 import BilanDiagnostic from './BilanDiagnostic';
-import { FileDown, Sparkles, ChevronLeft, Clock, User, MapPin, AlertCircle, Stethoscope } from 'lucide-react';
+import { FileDown, Sparkles, ChevronLeft, Clock, User, MapPin, AlertCircle, Stethoscope, Edit, Save, X, Mail, Phone, Calendar, CreditCard } from 'lucide-react';
 import { exportEvaluationToPDF } from '../src/utils/pdfExport';
 
 const mockNotes: SessionNote[] = [
@@ -16,7 +16,7 @@ const mockNotes: SessionNote[] = [
 
 const PatientDetail: React.FC = () => {
   const { id } = useParams();
-  const { patients, setAppointmentModalOpen, setSelectedPatientId, showToast, reportPatientDelay, appointments, cancelAppointment, sessionNotes, deleteSessionNote, addSessionNote } = useStore();
+  const { patients, setAppointmentModalOpen, setSelectedPatientId, showToast, reportPatientDelay, appointments, cancelAppointment, sessionNotes, deleteSessionNote, addSessionNote, assessments, currentUser, users, createAccountForExistingPatient } = useStore();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'medical' | 'appointments' | 'bilan' | 'sessions' | 'docs' | 'billing'>('medical');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,11 +27,16 @@ const PatientDetail: React.FC = () => {
   const [isConfirmingSidebarCancel, setIsConfirmingSidebarCancel] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [newNote, setNewNote] = useState({ eva: 3, content: '', objectives: '' });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const patient = patients.find(p => p.id === id);
-  const { assessments, currentUser } = useStore();
   const patientAssessments = assessments.filter(a => a.patientId === id);
   const patientNotes = sessionNotes.filter(n => n.patientId === id);
+  const hasAccount = users.some(u => u.id === id);
+
+  const canManageAgenda = (currentUser?.permissions || []).includes(UserPermission.MANAGE_AGENDA);
+  const canViewMedicalRecords = (currentUser?.permissions || []).includes(UserPermission.VIEW_MEDICAL_RECORDS);
+  const canManageBilling = (currentUser?.permissions || []).includes(UserPermission.MANAGE_BILLING);
 
   if (!patient) {
     return (
@@ -95,7 +100,9 @@ const PatientDetail: React.FC = () => {
           <ChevronLeft size={24} />
         </button>
         <div>
-          <h2 className="text-2xl font-bold">{patient.lastName} {patient.firstName}</h2>
+          <h2 className="text-2xl font-bold">
+            {patient.lastName || patient.firstName ? `${patient.lastName} ${patient.firstName}` : 'Patient sans nom'}
+          </h2>
           <p className="text-sm text-slate-500">ID: #{patient.id} • {patient.pathology}</p>
         </div>
         <div className="ml-auto flex gap-3">
@@ -128,7 +135,12 @@ const PatientDetail: React.FC = () => {
               Signaler Retard
             </button>
           )}
-          <button className="hidden md:block px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold hover:bg-white transition-colors">Modifier</button>
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="hidden md:block px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold hover:bg-white transition-colors"
+          >
+            Modifier
+          </button>
           <button 
             onClick={handleNewRDV}
             className="px-4 py-2 bg-sky-600 text-white rounded-xl text-sm font-semibold hover:bg-sky-700 transition-colors shadow-lg shadow-sky-100"
@@ -143,10 +155,18 @@ const PatientDetail: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
             <div className="w-24 h-24 mx-auto bg-sky-100 rounded-full flex items-center justify-center text-3xl font-bold text-sky-600 mb-4">
-              {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
+              {patient.firstName || patient.lastName ? (
+                <>
+                  {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
+                </>
+              ) : (
+                <User size={40} />
+              )}
             </div>
             <div className="text-center space-y-1 mb-6">
-              <p className="font-bold text-lg">{patient.firstName} {patient.lastName}</p>
+              <p className="font-bold text-lg">
+                {patient.firstName || patient.lastName ? `${patient.firstName} ${patient.lastName}` : 'Patient sans nom'}
+              </p>
               <div className="flex items-center justify-center gap-2">
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-tighter ${
                   patient.gender === 'Homme' ? 'bg-blue-50 text-blue-600' : 
@@ -187,6 +207,27 @@ const PatientDetail: React.FC = () => {
                   <p className="text-sm font-medium">{patient.category}</p>
                 </div>
                 {patient.mutuelleName && <p className="text-xs text-slate-500 mt-1">{patient.mutuelleName}</p>}
+              </div>
+
+              <div className="pt-4 border-t border-slate-50">
+                <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Compte Patient</p>
+                {hasAccount ? (
+                  <div className="flex items-center gap-2 text-emerald-600">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <span className="text-xs font-bold uppercase tracking-tighter">Compte Actif</span>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      if (window.confirm("Voulez-vous créer un compte utilisateur pour ce patient ?")) {
+                        createAccountForExistingPatient(patient.id);
+                      }
+                    }}
+                    className="w-full py-2 bg-sky-50 text-sky-600 rounded-xl text-[10px] font-bold uppercase hover:bg-sky-100 transition-all border border-sky-100"
+                  >
+                    Créer un compte d'accès
+                  </button>
+                )}
               </div>
 
               <div className="pt-4 border-t border-slate-50">
@@ -633,6 +674,248 @@ const PatientDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+      {/* Edit Patient Modal */}
+      {isEditModalOpen && (
+        <EditPatientModal 
+          patient={patient} 
+          onClose={() => setIsEditModalOpen(false)} 
+        />
+      )}
+    </div>
+  );
+};
+
+const EditPatientModal: React.FC<{ patient: Patient, onClose: () => void }> = ({ patient, onClose }) => {
+  const { updatePatient, showToast } = useStore();
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const [totalSessions, setTotalSessions] = useState(patient.totalSessionsPrescribed.toString());
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    const lastName = (formData.get('lastName') as string) || '';
+    const firstName = (formData.get('firstName') as string) || '';
+    const birthDate = (formData.get('birthDate') as string) || '';
+    const email = (formData.get('email') as string) || '';
+    const phone = (formData.get('phone') as string) || '';
+    const prescribingDoctor = (formData.get('prescribingDoctor') as string) || '';
+    const pathology = (formData.get('pathology') as string) || '';
+    const totalSessions = parseInt(formData.get('totalSessions') as string) || patient.totalSessionsPrescribed;
+
+    // Validation
+    if (!lastName || !firstName || !birthDate || !email || !phone || !prescribingDoctor || !pathology) {
+      showToast("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+
+    updatePatient(patient.id, {
+      firstName,
+      lastName,
+      email,
+      phone,
+      gender: (formData.get('gender') as 'Homme' | 'Femme' | 'Autre') || 'Autre',
+      cin: (formData.get('cin') as string) || '',
+      socialSecurityNumber: (formData.get('socialSecurityNumber') as string) || '',
+      birthDate,
+      address: (formData.get('address') as string) || '',
+      city: (formData.get('city') as string) || '',
+      postalCode: (formData.get('postalCode') as string) || '',
+      emergencyContactName: (formData.get('emergencyContactName') as string) || '',
+      emergencyContactPhone: (formData.get('emergencyContactPhone') as string) || '',
+      category: (formData.get('category') as PatientCategory) || PatientCategory.HORS_MUTUELLE,
+      mutuelleName: (formData.get('mutuelleName') as string) || undefined,
+      prescribingDoctor,
+      pathology,
+      totalSessionsPrescribed: totalSessions,
+    });
+    onClose();
+  };
+
+  const InputWrapper = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
+        <Icon size={12} className="text-sky-500" />
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[60] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-3xl shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-300">
+        {/* Header */}
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-sky-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-200">
+              <Edit size={24} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Modifier le Dossier</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{patient.lastName} {patient.firstName}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-white hover:shadow-md rounded-2xl transition-all text-slate-400 hover:text-red-500">
+            <X size={20} strokeWidth={3} />
+          </button>
+        </div>
+
+        <form ref={formRef} onSubmit={handleSubmit} className="p-8" noValidate>
+          <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
+            {/* Section 1: Identité */}
+            <div className="space-y-6">
+              <h4 className="text-xs font-black text-sky-600 uppercase tracking-[0.2em] border-b border-sky-100 pb-2">1. Identité & État Civil</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Nom de famille" icon={User}>
+                  <input name="lastName" defaultValue={patient.lastName} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: DURAND" />
+                </InputWrapper>
+                <InputWrapper label="Prénom" icon={User}>
+                  <input name="firstName" defaultValue={patient.firstName} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: Thomas" />
+                </InputWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Date de naissance" icon={Calendar}>
+                  <input name="birthDate" type="date" defaultValue={patient.birthDate} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" />
+                </InputWrapper>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
+                    <User size={12} className="text-sky-500" />
+                    Genre
+                  </label>
+                  <div className="flex gap-4">
+                    {['Homme', 'Femme', 'Autre'].map((g) => (
+                      <label key={g} className="flex-1 cursor-pointer group">
+                        <input type="radio" name="gender" value={g} className="hidden peer" defaultChecked={patient.gender === g} />
+                        <div className="py-3 text-center rounded-2xl border-2 border-slate-100 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-600 font-bold text-slate-500 group-hover:bg-slate-50 transition-all">
+                          {g}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="CIN / Passeport" icon={CreditCard}>
+                  <input name="cin" defaultValue={patient.cin} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: AB123456" />
+                </InputWrapper>
+                <InputWrapper label="Numéro de Sécurité Sociale (NIR)" icon={Sparkles}>
+                  <input name="socialSecurityNumber" defaultValue={patient.socialSecurityNumber} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="1 85 06 75 123 456 78" />
+                </InputWrapper>
+              </div>
+            </div>
+
+            {/* Section 2: Coordonnées */}
+            <div className="space-y-6">
+              <h4 className="text-xs font-black text-sky-600 uppercase tracking-[0.2em] border-b border-sky-100 pb-2">2. Coordonnées & Adresse</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Email" icon={Mail}>
+                  <input name="email" type="email" defaultValue={patient.email} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="contact@email.fr" />
+                </InputWrapper>
+                <InputWrapper label="Téléphone" icon={Phone}>
+                  <input name="phone" defaultValue={patient.phone} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="06 12 34 56 78" />
+                </InputWrapper>
+              </div>
+
+              <InputWrapper label="Adresse complète" icon={MapPin}>
+                <input name="address" defaultValue={patient.address} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="12 rue de la Paix" />
+              </InputWrapper>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Code Postal" icon={MapPin}>
+                  <input name="postalCode" defaultValue={patient.postalCode} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="75001" />
+                </InputWrapper>
+                <InputWrapper label="Ville" icon={MapPin}>
+                  <input name="city" defaultValue={patient.city} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Paris" />
+                </InputWrapper>
+              </div>
+
+              <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                  <AlertCircle size={14} />
+                  Contact d'urgence
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input name="emergencyContactName" defaultValue={patient.emergencyContactName} className="w-full px-5 py-3 bg-white rounded-xl border-none focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold" placeholder="Nom du contact" />
+                  <input name="emergencyContactPhone" defaultValue={patient.emergencyContactPhone} className="w-full px-5 py-3 bg-white rounded-xl border-none focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold" placeholder="Téléphone" />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Médical */}
+            <div className="space-y-6">
+              <h4 className="text-xs font-black text-sky-600 uppercase tracking-[0.2em] border-b border-sky-100 pb-2">3. Informations Médicales</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Couverture Mutuelle" icon={CreditCard}>
+                  <select name="category" defaultValue={patient.category} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700 appearance-none">
+                    <option value={PatientCategory.MUTUALISTE}>Mutualiste</option>
+                    <option value={PatientCategory.HORS_MUTUELLE}>Hors Mutuelle (HN)</option>
+                  </select>
+                </InputWrapper>
+                <InputWrapper label="Médecin Prescripteur" icon={Stethoscope}>
+                  <input name="prescribingDoctor" defaultValue={patient.prescribingDoctor} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Dr. Martin" />
+                </InputWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Nombre de séances prescrites" icon={Calendar}>
+                  <div className="space-y-3">
+                    <input 
+                      type="number"
+                      name="totalSessions" 
+                      value={totalSessions}
+                      onChange={(e) => setTotalSessions(e.target.value)}
+                      className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" 
+                      placeholder="ex: 10"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {['10', '15', '20', '30', '50'].map(val => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setTotalSessions(val)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all border-2 ${
+                            totalSessions === val 
+                              ? 'bg-sky-600 border-sky-600 text-white shadow-lg shadow-sky-100' 
+                              : 'bg-white border-slate-100 text-slate-400 hover:border-sky-200 hover:text-sky-600'
+                          }`}
+                        >
+                          {val}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </InputWrapper>
+              </div>
+
+              <InputWrapper label="Motif de consultation / Pathologie" icon={AlertCircle}>
+                <textarea name="pathology" defaultValue={patient.pathology} className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none h-32 resize-none font-bold text-slate-700" placeholder="Décrivez brièvement le diagnostic initial..."></textarea>
+              </InputWrapper>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="pt-8 flex gap-4 border-t border-slate-100 mt-8">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="px-8 py-4 border-2 border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
+            >
+              Annuler
+            </button>
+            <div className="flex-1" />
+            <button 
+              type="submit" 
+              className="px-12 py-4 bg-sky-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-sky-200 hover:bg-sky-700 transition-all active:scale-95 flex items-center gap-2"
+            >
+              <Save size={16} />
+              Enregistrer les modifications
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

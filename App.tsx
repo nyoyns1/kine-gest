@@ -32,7 +32,7 @@ const Sidebar = () => {
   ];
 
   const filteredItems = menuItems.filter(item => 
-    currentUser && currentUser.permissions?.includes(item.permission)
+    currentUser && (currentUser.permissions || []).includes(item.permission)
   );
 
   return (
@@ -79,39 +79,62 @@ const Sidebar = () => {
 };
 
 const PatientModal = () => {
-  const { isPatientModalOpen, setPatientModalOpen, addPatient } = useStore();
+  const { isPatientModalOpen, setPatientModalOpen, addPatient, showToast } = useStore();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const [totalSessions, setTotalSessions] = useState('10');
 
   if (!isPatientModalOpen) return null;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    const lastName = (formData.get('lastName') as string) || '';
+    const firstName = (formData.get('firstName') as string) || '';
+    const birthDate = (formData.get('birthDate') as string) || '';
+    const email = (formData.get('email') as string) || '';
+    const phone = (formData.get('phone') as string) || '';
+    const prescribingDoctor = (formData.get('prescribingDoctor') as string) || '';
+    const pathology = (formData.get('pathology') as string) || '';
+    const totalSessions = parseInt(formData.get('totalSessions') as string) || 10;
+    const consentRGPD = formData.get('consentRGPD') === 'on';
+
+    // Validation
+    if (!lastName || !firstName || !birthDate || !email || !phone || !prescribingDoctor || !pathology) {
+      showToast("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+    if (!consentRGPD) {
+      showToast("Vous devez accepter le consentement RGPD.");
+      return;
+    }
+
+    const createAccount = formData.get('createAccount') === 'on';
     const newPatient = addPatient({
-      firstName: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
-      gender: formData.get('gender') as 'Homme' | 'Femme' | 'Autre',
-      cin: formData.get('cin') as string,
-      socialSecurityNumber: formData.get('socialSecurityNumber') as string,
-      birthDate: formData.get('birthDate') as string,
-      address: formData.get('address') as string,
-      city: formData.get('city') as string,
-      postalCode: formData.get('postalCode') as string,
-      emergencyContactName: formData.get('emergencyContactName') as string,
-      emergencyContactPhone: formData.get('emergencyContactPhone') as string,
-      category: formData.get('category') as PatientCategory,
-      mutuelleName: formData.get('mutuelleName') as string || undefined,
-      prescribingDoctor: formData.get('prescribingDoctor') as string,
-      pathology: formData.get('pathology') as string,
+      firstName,
+      lastName,
+      email,
+      phone,
+      gender: (formData.get('gender') as 'Homme' | 'Femme' | 'Autre') || 'Autre',
+      cin: (formData.get('cin') as string) || '',
+      socialSecurityNumber: (formData.get('socialSecurityNumber') as string) || '',
+      birthDate,
+      address: (formData.get('address') as string) || '',
+      city: (formData.get('city') as string) || '',
+      postalCode: (formData.get('postalCode') as string) || '',
+      emergencyContactName: (formData.get('emergencyContactName') as string) || '',
+      emergencyContactPhone: (formData.get('emergencyContactPhone') as string) || '',
+      category: (formData.get('category') as PatientCategory) || PatientCategory.HORS_MUTUELLE,
+      mutuelleName: (formData.get('mutuelleName') as string) || undefined,
+      prescribingDoctor,
+      pathology,
       antecedents: [],
-      consentRGPD: formData.get('consentRGPD') === 'on',
+      consentRGPD: true,
       recoveryRate: 0,
       satisfactionRate: 0,
-      totalSessionsPrescribed: 10,
-      sessionsRemaining: 10,
+      totalSessionsPrescribed: totalSessions,
+      sessionsRemaining: totalSessions,
       gamification: {
         patientId: '',
         points: 0,
@@ -119,9 +142,8 @@ const PatientModal = () => {
         badges: [],
         rewards: []
       }
-    });
+    }, createAccount);
     setPatientModalOpen(false);
-    setStep(1);
     navigate(`/patients/${newPatient.id}`);
   };
 
@@ -146,7 +168,7 @@ const PatientModal = () => {
             </div>
             <div>
               <h3 className="text-xl font-black text-slate-900 tracking-tight">Nouveau Dossier Patient</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Étape {step} sur 3</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Fiche complète</p>
             </div>
           </div>
           <button onClick={() => setPatientModalOpen(false)} className="p-3 hover:bg-white hover:shadow-md rounded-2xl transition-all text-slate-400 hover:text-red-500">
@@ -154,27 +176,25 @@ const PatientModal = () => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8">
-          {/* Progress Bar */}
-          <div className="flex gap-2 mb-8">
-            {[1, 2, 3].map(i => (
-              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= i ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.3)]' : 'bg-slate-100'}`} />
-            ))}
-          </div>
+        <form ref={formRef} onSubmit={handleSubmit} className="p-8" noValidate>
+          <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
+            {/* Section 1: Identité */}
+            <div className="space-y-6">
+              <h4 className="text-xs font-black text-sky-600 uppercase tracking-[0.2em] border-b border-sky-100 pb-2">1. Identité & État Civil</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Nom de famille" icon={User}>
+                  <input name="lastName" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: DURAND" />
+                </InputWrapper>
+                <InputWrapper label="Prénom" icon={User}>
+                  <input name="firstName" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: Thomas" />
+                </InputWrapper>
+              </div>
 
-          <div className="min-h-[400px]">
-            {step === 1 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputWrapper label="Nom de famille" icon={User}>
-                    <input required name="lastName" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: DURAND" />
-                  </InputWrapper>
-                  <InputWrapper label="Prénom" icon={User}>
-                    <input required name="firstName" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: Thomas" />
-                  </InputWrapper>
-                </div>
-
-                <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Date de naissance" icon={Calendar}>
+                  <input name="birthDate" type="date" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" />
+                </InputWrapper>
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
                     <User size={12} className="text-sky-500" />
                     Genre
@@ -190,126 +210,141 @@ const PatientModal = () => {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputWrapper label="Date de naissance" icon={Calendar}>
-                    <input required name="birthDate" type="date" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" />
-                  </InputWrapper>
-                  <InputWrapper label="CIN / Passeport" icon={CreditCard}>
-                    <input name="cin" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="ex: AB123456" />
-                  </InputWrapper>
-                </div>
-
-                <InputWrapper label="Numéro de Sécurité Sociale (NIR)" icon={ShieldAlert}>
-                  <input name="socialSecurityNumber" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="1 85 06 75 123 456 78" />
+            {/* Section 2: Coordonnées */}
+            <div className="space-y-6">
+              <h4 className="text-xs font-black text-sky-600 uppercase tracking-[0.2em] border-b border-sky-100 pb-2">2. Coordonnées & Adresse</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Email" icon={Mail}>
+                  <input name="email" type="email" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="contact@email.fr" />
+                </InputWrapper>
+                <InputWrapper label="Téléphone" icon={Phone}>
+                  <input name="phone" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="06 12 34 56 78" />
                 </InputWrapper>
               </div>
-            )}
 
-            {step === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputWrapper label="Email" icon={Mail}>
-                    <input required name="email" type="email" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="contact@email.fr" />
-                  </InputWrapper>
-                  <InputWrapper label="Téléphone" icon={Phone}>
-                    <input required name="phone" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="06 12 34 56 78" />
-                  </InputWrapper>
-                </div>
+              <InputWrapper label="Adresse complète" icon={MapPin}>
+                <input name="address" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="12 rue de la Paix" />
+              </InputWrapper>
 
-                <InputWrapper label="Adresse complète" icon={MapPin}>
-                  <input name="address" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="12 rue de la Paix" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Code Postal" icon={MapPin}>
+                  <input name="postalCode" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="75001" />
                 </InputWrapper>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputWrapper label="Code Postal" icon={MapPin}>
-                    <input name="postalCode" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="75001" />
-                  </InputWrapper>
-                  <InputWrapper label="Ville" icon={MapPin}>
-                    <input name="city" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Paris" />
-                  </InputWrapper>
-                </div>
-
-                <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
-                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                    <AlertCircle size={14} />
-                    Contact d'urgence
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input name="emergencyContactName" className="w-full px-5 py-3 bg-white rounded-xl border-none focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold" placeholder="Nom du contact" />
-                    <input name="emergencyContactPhone" className="w-full px-5 py-3 bg-white rounded-xl border-none focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold" placeholder="Téléphone" />
-                  </div>
-                </div>
+                <InputWrapper label="Ville" icon={MapPin}>
+                  <input name="city" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Paris" />
+                </InputWrapper>
               </div>
-            )}
+            </div>
 
-            {step === 3 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputWrapper label="Couverture Mutuelle" icon={CreditCard}>
-                    <select name="category" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700 appearance-none">
-                      <option value={PatientCategory.MUTUALISTE}>Mutualiste</option>
-                      <option value={PatientCategory.HORS_MUTUELLE}>Hors Mutuelle (HN)</option>
-                    </select>
-                  </InputWrapper>
-                  <InputWrapper label="Médecin Prescripteur" icon={Stethoscope}>
-                    <input required name="prescribingDoctor" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Dr. Martin" />
-                  </InputWrapper>
-                </div>
-
-                <InputWrapper label="Motif de consultation / Pathologie" icon={AlertCircle}>
-                  <textarea required name="pathology" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none h-32 resize-none font-bold text-slate-700" placeholder="Décrivez brièvement le diagnostic initial..."></textarea>
+            {/* Section 3: Médical */}
+            <div className="space-y-6">
+              <h4 className="text-xs font-black text-sky-600 uppercase tracking-[0.2em] border-b border-sky-100 pb-2">3. Informations Médicales</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Couverture Mutuelle" icon={CreditCard}>
+                  <select name="category" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700 appearance-none">
+                    <option value={PatientCategory.MUTUALISTE}>Mutualiste</option>
+                    <option value={PatientCategory.HORS_MUTUELLE}>Hors Mutuelle (HN)</option>
+                  </select>
                 </InputWrapper>
+                <InputWrapper label="Médecin Prescripteur" icon={Stethoscope}>
+                  <input name="prescribingDoctor" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" placeholder="Dr. Martin" />
+                </InputWrapper>
+              </div>
 
-                <div className="bg-sky-50 p-6 rounded-[2rem] border border-sky-100 space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="relative flex items-center h-5">
-                      <input 
-                        required 
-                        type="checkbox" 
-                        name="consentRGPD" 
-                        id="consentRGPD"
-                        className="w-5 h-5 text-sky-600 bg-white border-slate-300 rounded-lg focus:ring-sky-500" 
-                      />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper label="Nombre de séances prescrites" icon={Calendar}>
+                  <div className="space-y-3">
+                    <input 
+                      type="number"
+                      name="totalSessions" 
+                      value={totalSessions}
+                      onChange={(e) => setTotalSessions(e.target.value)}
+                      className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none font-bold text-slate-700" 
+                      placeholder="ex: 10"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {['10', '15', '20', '30', '50'].map(val => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setTotalSessions(val)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all border-2 ${
+                            totalSessions === val 
+                              ? 'bg-sky-600 border-sky-600 text-white shadow-lg shadow-sky-100' 
+                              : 'bg-white border-slate-100 text-slate-400 hover:border-sky-200 hover:text-sky-600'
+                          }`}
+                        >
+                          {val}
+                        </button>
+                      ))}
                     </div>
-                    <label htmlFor="consentRGPD" className="text-xs text-slate-600 leading-relaxed font-medium">
-                      <span className="font-black text-sky-900 block mb-1 uppercase tracking-widest">Consentement RGPD & Médical</span>
-                      Je confirme que le patient a été informé du traitement de ses données personnelles et qu'il accepte que ses informations médicales soient conservées de manière sécurisée dans le cadre de son suivi de soins.
-                    </label>
                   </div>
+                </InputWrapper>
+                <div className="flex items-center pt-2">
+                  <p className="text-[10px] font-bold text-slate-400 italic leading-tight">
+                    Saisissez un nombre personnalisé ou choisissez un pack standard.
+                  </p>
                 </div>
               </div>
-            )}
+
+              <InputWrapper label="Motif de consultation / Pathologie" icon={AlertCircle}>
+                <textarea name="pathology" className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 focus:bg-white transition-all outline-none h-32 resize-none font-bold text-slate-700" placeholder="Décrivez brièvement le diagnostic initial..."></textarea>
+              </InputWrapper>
+            </div>
+
+            {/* Section 4: Consentement */}
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="relative flex items-center h-5">
+                    <input 
+                      type="checkbox" 
+                      name="consentRGPD" 
+                      id="consentRGPD"
+                      className="w-5 h-5 text-sky-600 bg-white border-slate-300 rounded-lg focus:ring-sky-500" 
+                    />
+                  </div>
+                  <label htmlFor="consentRGPD" className="text-xs text-slate-600 leading-relaxed font-medium">
+                    <span className="font-black text-sky-900 block mb-1 uppercase tracking-widest">Consentement RGPD & Médical</span>
+                    Je confirme que le patient a été informé du traitement de ses données personnelles et qu'il accepte que ses informations médicales soient conservées de manière sécurisée.
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 px-6">
+                <input 
+                  type="checkbox" 
+                  name="createAccount" 
+                  id="createAccount"
+                  className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded focus:ring-sky-500" 
+                  defaultChecked
+                />
+                <label htmlFor="createAccount" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer">
+                  Créer un compte patient automatiquement
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-8 flex gap-4">
-            {step > 1 && (
-              <button 
-                type="button" 
-                onClick={() => setStep(prev => prev - 1)} 
-                className="px-8 py-4 border-2 border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
-              >
-                Précédent
-              </button>
-            )}
+          <div className="pt-8 flex gap-4 border-t border-slate-100 mt-8">
+            <button 
+              type="button" 
+              onClick={() => setPatientModalOpen(false)} 
+              className="px-8 py-4 border-2 border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
+            >
+              Annuler
+            </button>
             <div className="flex-1" />
-            {step < 3 ? (
-              <button 
-                type="button" 
-                onClick={() => setStep(prev => prev + 1)} 
-                className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-black transition-all active:scale-95"
-              >
-                Suivant
-              </button>
-            ) : (
-              <button 
-                type="submit" 
-                className="px-12 py-4 bg-sky-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-sky-200 hover:bg-sky-700 transition-all active:scale-95"
-              >
-                Créer le dossier
-              </button>
-            )}
+            <button 
+              type="submit" 
+              className="px-12 py-4 bg-sky-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-sky-200 hover:bg-sky-700 transition-all active:scale-95"
+            >
+              Créer le dossier
+            </button>
           </div>
         </form>
       </div>
@@ -620,13 +655,13 @@ const Layout = () => {
         </div>
         <div className="max-w-7xl mx-auto p-4 md:p-8 pt-0 md:pt-0">
           <Routes>
-            <Route path="/" element={currentUser.permissions?.includes(UserPermission.VIEW_DASHBOARD) ? <Dashboard /> : <Agenda />} />
-            <Route path="/patients" element={currentUser.permissions?.includes(UserPermission.MANAGE_PATIENTS) ? <Patients /> : <Agenda />} />
-            <Route path="/patients/:id" element={currentUser.permissions?.includes(UserPermission.VIEW_MEDICAL_RECORDS) || currentUser.permissions?.includes(UserPermission.MANAGE_PATIENTS) ? <PatientDetail /> : <Agenda />} />
-            <Route path="/agenda" element={currentUser.permissions?.includes(UserPermission.MANAGE_AGENDA) ? <Agenda /> : <Dashboard />} />
-            <Route path="/billing" element={currentUser.permissions?.includes(UserPermission.MANAGE_BILLING) ? <Billing /> : <Agenda />} />
-            <Route path="/stats" element={currentUser.permissions?.includes(UserPermission.VIEW_STATS) ? <Stats /> : <Agenda />} />
-            <Route path="/admin" element={currentUser.permissions?.includes(UserPermission.MANAGE_USERS) ? <Admin /> : <Agenda />} />
+            <Route path="/" element={(currentUser.permissions || []).includes(UserPermission.VIEW_DASHBOARD) ? <Dashboard /> : <Agenda />} />
+            <Route path="/patients" element={(currentUser.permissions || []).includes(UserPermission.MANAGE_PATIENTS) ? <Patients /> : <Agenda />} />
+            <Route path="/patients/:id" element={(currentUser.permissions || []).includes(UserPermission.VIEW_MEDICAL_RECORDS) || (currentUser.permissions || []).includes(UserPermission.MANAGE_PATIENTS) ? <PatientDetail /> : <Agenda />} />
+            <Route path="/agenda" element={(currentUser.permissions || []).includes(UserPermission.MANAGE_AGENDA) ? <Agenda /> : <Dashboard />} />
+            <Route path="/billing" element={(currentUser.permissions || []).includes(UserPermission.MANAGE_BILLING) ? <Billing /> : <Agenda />} />
+            <Route path="/stats" element={(currentUser.permissions || []).includes(UserPermission.VIEW_STATS) ? <Stats /> : <Agenda />} />
+            <Route path="/admin" element={(currentUser.permissions || []).includes(UserPermission.MANAGE_USERS) ? <Admin /> : <Agenda />} />
           </Routes>
         </div>
       </main>

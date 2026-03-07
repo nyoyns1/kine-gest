@@ -137,15 +137,15 @@ const Login: React.FC = () => {
         <div className="bg-sky-50 p-4 rounded-2xl border border-sky-100">
           <p className="text-[10px] font-bold text-sky-800 uppercase tracking-widest mb-2 text-center">Comptes Démo</p>
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => { setEmail('reforme3334@gmail.com'); setPassword('re@forme1'); }} className="text-[10px] bg-white p-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors text-left">
+            <button onClick={() => { setEmail('reforme3334@gmail.com'); setPassword('admin'); }} className="text-[10px] bg-white p-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors text-left">
               <span className="font-bold block">Admin</span>
               reforme3334@gmail.com
             </button>
-            <button onClick={() => setEmail('therapeute@kinegest.com')} className="text-[10px] bg-white p-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors text-left">
+            <button onClick={() => { setEmail('therapeute@kinegest.com'); setPassword('password'); }} className="text-[10px] bg-white p-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors text-left">
               <span className="font-bold block">Thérapeute</span>
               therapeute@kinegest.com
             </button>
-            <button onClick={() => setEmail('alice.dubois@mail.com')} className="text-[10px] bg-white p-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors text-left">
+            <button onClick={() => { setEmail('alice.dubois@mail.com'); setPassword('password'); }} className="text-[10px] bg-white p-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors text-left">
               <span className="font-bold block">Patient</span>
               alice.dubois@mail.com
             </button>

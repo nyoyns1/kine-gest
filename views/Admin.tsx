@@ -4,14 +4,17 @@ import { UserRole, UserPermission } from '../types';
 import { Shield, UserCheck, UserX, Edit3, Mail, UserPlus, X, Lock } from 'lucide-react';
 
 const Admin: React.FC = () => {
-  const { users, updateUserRole, toggleUserStatus, currentUser, addEmployee, updateUserPermissions } = useStore();
+  const { users, updateUserRole, toggleUserStatus, currentUser, addEmployee, updateUserPermissions, resetPassword } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [permissionModalUser, setPermissionModalUser] = useState<string | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const [tempPermissions, setTempPermissions] = useState<UserPermission[]>([]);
   const [newEmployee, setNewEmployee] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     role: UserRole.THERAPEUTE
   });
 
@@ -29,12 +32,19 @@ const Admin: React.FC = () => {
 
   const handleAddEmployee = (e: React.FormEvent) => {
     e.preventDefault();
-    addEmployee(newEmployee);
+    addEmployee({
+      firstName: newEmployee.firstName,
+      lastName: newEmployee.lastName,
+      email: newEmployee.email,
+      password: newEmployee.password || 'password',
+      role: newEmployee.role
+    });
     setIsModalOpen(false);
     setNewEmployee({
       firstName: '',
       lastName: '',
       email: '',
+      password: '',
       role: UserRole.THERAPEUTE
     });
   };
@@ -118,13 +128,23 @@ const Admin: React.FC = () => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => {
+                          setResetPasswordUser(user.id);
+                          setNewPassword('');
+                        }}
+                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="Réinitialiser le mot de passe"
+                      >
+                        <Lock size={18} />
+                      </button>
+                      <button
+                        onClick={() => {
                           setPermissionModalUser(user.id);
                           setTempPermissions(user.permissions || []);
                         }}
                         className="p-2 text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
                         title="Modifier les permissions"
                       >
-                        <Lock size={18} />
+                        <Shield size={18} />
                       </button>
                       <button
                         onClick={() => toggleUserStatus(user.id)}
@@ -209,6 +229,16 @@ const Admin: React.FC = () => {
                 />
               </div>
               <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mot de passe (optionnel)</label>
+                <input
+                  type="text"
+                  value={newEmployee.password}
+                  onChange={(e) => setNewEmployee({...newEmployee, password: e.target.value})}
+                  placeholder="Par défaut: password"
+                  className="w-full px-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Rôle</label>
                 <select
                   value={newEmployee.role}
@@ -229,6 +259,53 @@ const Admin: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Réinitialisation Mot de Passe */}
+      {resetPasswordUser && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-xl font-bold">Réinitialiser le mot de passe</h3>
+              <button onClick={() => setResetPasswordUser(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500">
+                Réinitialiser le mot de passe de <strong>{users.find(u => u.id === resetPasswordUser)?.firstName} {users.find(u => u.id === resetPasswordUser)?.lastName}</strong>.
+              </p>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nouveau mot de passe</label>
+                <input
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Laissez vide pour '123456'"
+                  className="w-full px-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
+                />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button 
+                  onClick={() => setResetPasswordUser(null)}
+                  className="flex-1 px-4 py-3 border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={() => {
+                    if (resetPasswordUser) {
+                      resetPassword(resetPasswordUser, newPassword);
+                      setResetPasswordUser(null);
+                    }
+                  }}
+                  className="flex-1 bg-amber-600 text-white py-3 rounded-2xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-100 active:scale-95"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

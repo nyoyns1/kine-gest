@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Patient, PatientCategory } from '../types';
 import { useStore } from '../store';
+import { User } from 'lucide-react';
 
 const Patients: React.FC = () => {
   const { patients, setPatientModalOpen } = useStore();
@@ -13,9 +14,9 @@ const Patients: React.FC = () => {
   const filteredPatients = patients.filter(p => {
     const searchLower = search.toLowerCase();
     const matchesSearch = 
-      `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchLower) ||
-      p.pathology.toLowerCase().includes(searchLower) ||
-      p.phone.includes(search) ||
+      `${p.firstName || ''} ${p.lastName || ''}`.toLowerCase().includes(searchLower) ||
+      (p.pathology || '').toLowerCase().includes(searchLower) ||
+      (p.phone || '').includes(search) ||
       (p.cin && p.cin.toLowerCase().includes(searchLower));
     
     const matchesFilter = filter === 'all' || p.category === filter;
@@ -68,6 +69,7 @@ const Patients: React.FC = () => {
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
                 <th className="px-6 py-4">Patient</th>
+                <th className="px-6 py-4">Contact & Naissance</th>
                 <th className="px-6 py-4">Statut</th>
                 <th className="px-6 py-4">Fidélité</th>
                 <th className="px-6 py-4">Pathologie</th>
@@ -84,12 +86,27 @@ const Patients: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors">
-                        {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
+                        {patient.firstName || patient.lastName ? (
+                          <>
+                            {(patient.firstName || '').charAt(0)}{(patient.lastName || '').charAt(0)}
+                          </>
+                        ) : (
+                          <User size={18} />
+                        )}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm">{patient.lastName} {patient.firstName}</p>
-                        <p className="text-xs text-slate-500">{patient.email}</p>
+                        <p className="font-semibold text-sm">
+                          {patient.lastName || patient.firstName ? `${patient.lastName} ${patient.firstName}` : 'Patient sans nom'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono">ID: #{patient.id}</p>
                       </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-slate-700">{patient.phone}</p>
+                      <p className="text-[10px] text-slate-500">{patient.email}</p>
+                      <p className="text-[10px] text-slate-400 italic">Né(e) le {patient.birthDate}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
