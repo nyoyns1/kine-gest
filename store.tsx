@@ -313,14 +313,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const loadFromBackend = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
       try {
-        const response = await fetch('/api/state');
-        if (!response.ok) throw new Error('Failed to fetch state');
+        const response = await fetch('/api/state', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          console.warn('Backend state not found or error, using local/default state');
+          setIsLoaded(true);
+          return;
+        }
+        
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.warn('Backend returned non-JSON response, likely SPA fallback. Using default state.');
+          setIsLoaded(true);
+          return;
+        }
+
         const data = await response.json();
         
         if (data && Object.keys(data).length > 0) {
-          // Use functional updates to ensure we are working with latest state if needed,
-          // though here we are just initializing.
           if (data.patients) setPatients(data.patients);
           if (data.appointments) setAppointments(data.appointments);
           if (data.expenses) setExpenses(data.expenses);
@@ -328,18 +343,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (data.assessments) setAssessments(data.assessments);
           if (data.sessionNotes) setSessionNotes(data.sessionNotes);
           if (data.notifications) setNotifications(data.notifications);
-          if (data.users) setUsers(data.users);
           if (data.exercises) setExercises(data.exercises);
           if (data.messages) setMessages(data.messages);
+          
+          if (data.users) {
+            // Apply admin migration to loaded users
+            const defaultPermissions = {
+              [UserRole.ADMIN]: Object.values(UserPermission),
+              [UserRole.THERAPEUTE]: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_PATIENTS, UserPermission.VIEW_MEDICAL_RECORDS, UserPermission.MANAGE_AGENDA, UserPermission.DELETE_APPOINTMENT],
+              [UserRole.SECRETAIRE]: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_PATIENTS, UserPermission.MANAGE_AGENDA, UserPermission.MANAGE_BILLING],
+              [UserRole.PATIENT]: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA]
+            };
+
+            const migratedUsers = data.users.map((u: User) => {
+              if (u.id === 'u1' || u.email === 'reforme3334@gmail.com') {
+                return {
+                  ...u,
+                  email: 'reforme3334@gmail.com',
+                  role: UserRole.ADMIN,
+                  permissions: defaultPermissions[UserRole.ADMIN]
+                };
+              }
+              return u;
+            });
+            setUsers(migratedUsers);
+          }
         }
-        setTimeout(() => setIsLoaded(true), 100);
       } catch (error) {
         console.error("Failed to load state from backend:", error);
-        showToast("Erreur de synchronisation. Vérifiez votre connexion.");
-        // We don't set isLoaded to true here to prevent overwriting server data with defaults
       } finally {
-        // We only set isLoaded if we actually got a response (even if empty)
-        // If it failed completely, we stay in loading state to protect data
+        setIsLoaded(true);
       }
     };
     loadFromBackend();

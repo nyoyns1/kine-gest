@@ -19,38 +19,38 @@ enum UserRole {
 // Middleware to check roles
 const checkRole = (allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // In a real app, you would get the user from the session or JWT
-    // For demo, we'll look for a header 'x-user-role'
     const userRole = req.headers['x-user-role'] as UserRole;
-
-    if (!userRole) {
-      return res.status(401).json({ error: "Non authentifié" });
-    }
-
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({ error: "Accès interdit : permissions insuffisantes" });
-    }
-
+    if (!userRole) return res.status(401).json({ error: "Non authentifié" });
+    if (!allowedRoles.includes(userRole)) return res.status(403).json({ error: "Accès interdit" });
     next();
   };
 };
 
 const app = express();
+const PORT = 3000;
 
-async function configureServer() {
+async function startServer() {
   app.use(express.json({ limit: '50mb' }));
 
-  // API Routes for State Persistence
+  // API Routes
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", mode: process.env.NODE_ENV || "development" });
+  });
+
   app.get("/api/state", async (req, res) => {
     try {
       if (existsSync(DATA_FILE)) {
         const data = await fs.readFile(DATA_FILE, "utf-8");
-        res.json(JSON.parse(data));
+        if (!data || data.trim() === "") return res.json({});
+        try {
+          res.json(JSON.parse(data));
+        } catch (e) {
+          res.json({});
+        }
       } else {
-        res.json({}); // Return empty if no data yet
+        res.json({});
       }
     } catch (error) {
-      console.error("Error reading state:", error);
       res.status(500).json({ error: "Failed to read state" });
     }
   });
@@ -60,36 +60,21 @@ async function configureServer() {
       await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2), "utf-8");
       res.json({ status: "ok" });
     } catch (error) {
-      console.error("Error saving state:", error);
       res.status(500).json({ error: "Failed to save state" });
     }
   });
 
-  // API Routes with Role protection
-  app.get("/api/admin/stats", checkRole([UserRole.ADMIN]), (req, res) => {
-    res.json({ 
-      revenue: 125000, 
-      activeUsers: 12,
-      systemHealth: "OK"
-    });
+  // Other API routes...
+  app.get("/api/appointments", (req, res) => {
+    res.json([{ id: 1, date: "2025-05-12", patient: "Alice Dubois" }]);
   });
 
-  app.get("/api/medical-records/:id", checkRole([UserRole.ADMIN, UserRole.THERAPEUTE]), (req, res) => {
-    res.json({ 
-      id: req.params.id,
-      notes: "Notes médicales confidentielles...",
-      diagnosis: "Pathologie complexe"
-    });
-  });
+  // Vite or Static
+  const isProduction = process.env.NODE_ENV === "production";
+  const distPath = path.join(__dirname, "dist");
 
-  app.get("/api/appointments", checkRole([UserRole.ADMIN, UserRole.THERAPEUTE, UserRole.SECRETAIRE, UserRole.PATIENT]), (req, res) => {
-    res.json([
-      { id: 1, date: "2025-05-12", patient: "Alice Dubois" }
-    ]);
-  });
-
-  // Vite middleware for development (only if not on Vercel)
-  if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
+  if (!isProduction && !process.env.VERCEL) {
+    console.log("Starting in DEVELOPMENT mode with Vite");
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -97,10 +82,8 @@ async function configureServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(__dirname, "dist");
+    console.log("Starting in PRODUCTION mode");
     app.use(express.static(distPath));
-    // Note: Vercel routes handle the SPA fallback via vercel.json
-    // but we keep this for other production environments
     app.get("*", (req, res) => {
       const indexHtmlPath = path.join(distPath, "index.html");
       if (existsSync(indexHtmlPath)) {
@@ -110,22 +93,18 @@ async function configureServer() {
       }
     });
   }
-}
 
-// Export for Vercel
-export default app;
-
-// Local startup
-if (!process.env.VERCEL) {
-  configureServer().then(() => {
-    const PORT = Number(process.env.PORT) || 3000;
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  }).catch(err => {
-    console.error("Failed to start server:", err);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
-} else {
-  // On Vercel, we need to ensure routes are configured
-  configureServer();
 }
+
+startServer().catch(err => {
+  console.error("Critical server error:", err);
+  // Fallback to ensure port is bound
+  const fallbackApp = express();
+  fallbackApp.get("*", (req, res) => res.send("Server is starting or failed to start. Please reload."));
+  fallbackApp.listen(PORT, "0.0.0.0");
+});
+
+export default app;

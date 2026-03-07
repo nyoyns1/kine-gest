@@ -596,7 +596,7 @@ const NotificationCenter = () => {
 };
 
 const Layout = () => {
-  const { currentUser, logout, isLoaded, saveStatus } = useStore();
+  const { currentUser, logout, isLoaded, setIsLoaded, saveStatus, showToast } = useStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -615,12 +615,25 @@ const Layout = () => {
         <p className="text-slate-500 text-center max-w-xs mb-8">
           Nous synchronisons vos données avec le serveur pour vous garantir une expérience fluide.
         </p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-white border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm"
-        >
-          Réessayer
-        </button>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-white border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm"
+          >
+            Réessayer
+          </button>
+          <button 
+            onClick={() => {
+              // Force load with local defaults if server is unreachable
+              setIsLoaded(true);
+              showToast("Mode hors-ligne activé (serveur injoignable)");
+            }}
+            className="px-6 py-3 bg-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-300 transition-all"
+          >
+            Continuer quand même
+          </button>
+        </div>
+        <Toast />
       </div>
     );
   }
