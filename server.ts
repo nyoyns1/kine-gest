@@ -1,9 +1,12 @@
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs/promises";
+import { existsSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const DATA_FILE = path.join(__dirname, "data.json");
 
 // Mock User Roles
 enum UserRole {
@@ -35,7 +38,32 @@ const checkRole = (allowedRoles: UserRole[]) => {
 const app = express();
 
 async function configureServer() {
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+
+  // API Routes for State Persistence
+  app.get("/api/state", async (req, res) => {
+    try {
+      if (existsSync(DATA_FILE)) {
+        const data = await fs.readFile(DATA_FILE, "utf-8");
+        res.json(JSON.parse(data));
+      } else {
+        res.json({}); // Return empty if no data yet
+      }
+    } catch (error) {
+      console.error("Error reading state:", error);
+      res.status(500).json({ error: "Failed to read state" });
+    }
+  });
+
+  app.post("/api/state", async (req, res) => {
+    try {
+      await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2), "utf-8");
+      res.json({ status: "ok" });
+    } catch (error) {
+      console.error("Error saving state:", error);
+      res.status(500).json({ error: "Failed to save state" });
+    }
+  });
 
   // API Routes with Role protection
   app.get("/api/admin/stats", checkRole([UserRole.ADMIN]), (req, res) => {
@@ -74,8 +102,9 @@ async function configureServer() {
     // Note: Vercel routes handle the SPA fallback via vercel.json
     // but we keep this for other production environments
     app.get("*", (req, res) => {
-      if (require("fs").existsSync(path.join(distPath, "index.html"))) {
-        res.sendFile(path.join(distPath, "index.html"));
+      const indexHtmlPath = path.join(distPath, "index.html");
+      if (existsSync(indexHtmlPath)) {
+        res.sendFile(indexHtmlPath);
       } else {
         res.status(404).send("Not found");
       }

@@ -71,172 +71,190 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [patients, setPatients] = useState<Patient[]>([
-    {
-      id: 'u4',
-      firstName: 'Alice',
-      lastName: 'Dubois',
-      birthDate: '1985-06-15',
-      gender: 'Femme',
-      phone: '06 12 34 56 78',
-      email: 'alice.dubois@mail.com',
-      role: UserRole.PATIENT,
-      isActive: true,
-      permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
-      category: PatientCategory.MUTUALISTE,
-      mutuelleName: 'Harmonie Mutuelle',
-      prescribingDoctor: 'Dr. Martin',
-      pathology: 'Entorse cheville droite',
-      antecedents: ['Asthme'],
-      consentRGPD: true,
-      createdAt: '2023-10-01',
-      totalSessionsPrescribed: 20,
-      sessionsRemaining: 12,
-      recoveryRate: 65,
-      satisfactionRate: 9,
-      gamification: {
-        patientId: 'u4',
-        points: 150,
-        delayCount: 0,
-        badges: [
-          { id: 'b1', name: '7 jours consécutifs', description: 'Exercices faits pendant une semaine', icon: '🔥', unlockedAt: '2024-05-10' }
-        ],
-        rewards: [
-          { id: 'r1', name: 'Pressothérapie offerte', description: 'Une séance de pressothérapie gratuite', pointsRequired: 500, isUnlocked: false },
-          { id: 'r2', name: 'Bilan gratuit', description: 'Un bilan complet offert', pointsRequired: 1000, isUnlocked: false }
-        ]
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    return [
+      {
+        id: 'u4',
+        firstName: 'Alice',
+        lastName: 'Dubois',
+        birthDate: '1985-06-15',
+        gender: 'Femme',
+        phone: '06 12 34 56 78',
+        email: 'alice.dubois@mail.com',
+        role: UserRole.PATIENT,
+        isActive: true,
+        permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
+        category: PatientCategory.MUTUALISTE,
+        mutuelleName: 'Harmonie Mutuelle',
+        prescribingDoctor: 'Dr. Martin',
+        pathology: 'Entorse cheville droite',
+        antecedents: ['Asthme'],
+        consentRGPD: true,
+        createdAt: '2023-10-01',
+        totalSessionsPrescribed: 20,
+        sessionsRemaining: 12,
+        recoveryRate: 65,
+        satisfactionRate: 9,
+        gamification: {
+          patientId: 'u4',
+          points: 150,
+          delayCount: 0,
+          badges: [
+            { id: 'b1', name: '7 jours consécutifs', description: 'Exercices faits pendant une semaine', icon: '🔥', unlockedAt: '2024-05-10' }
+          ],
+          rewards: [
+            { id: 'r1', name: 'Pressothérapie offerte', description: 'Une séance de pressothérapie gratuite', pointsRequired: 500, isUnlocked: false },
+            { id: 'r2', name: 'Bilan gratuit', description: 'Un bilan complet offert', pointsRequired: 1000, isUnlocked: false }
+          ]
+        }
+      },
+      {
+        id: 'u5',
+        firstName: 'Marc',
+        lastName: 'Lefebvre',
+        birthDate: '1970-03-22',
+        gender: 'Homme',
+        phone: '06 98 76 54 32',
+        email: 'marc.lefe@mail.com',
+        role: UserRole.PATIENT,
+        isActive: true,
+        permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
+        category: PatientCategory.HORS_MUTUELLE,
+        prescribingDoctor: 'Dr. Petit',
+        pathology: 'Lombalgie chronique',
+        antecedents: [],
+        consentRGPD: true,
+        createdAt: '2023-11-15',
+        totalSessionsPrescribed: 15,
+        sessionsRemaining: 5,
+        recoveryRate: 80,
+        satisfactionRate: 10,
+        gamification: {
+          patientId: 'u5',
+          points: 450,
+          delayCount: 1,
+          badges: [],
+          rewards: []
+        }
+      },
+      {
+        id: 'u6',
+        firstName: 'Sophie',
+        lastName: 'Moreau',
+        birthDate: '1992-11-05',
+        gender: 'Femme',
+        phone: '06 55 44 33 22',
+        email: 'sophie.m@mail.com',
+        role: UserRole.PATIENT,
+        isActive: true,
+        permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
+        category: PatientCategory.MUTUALISTE,
+        prescribingDoctor: 'Dr. Roux',
+        pathology: 'Rééducation LCA',
+        antecedents: [],
+        consentRGPD: true,
+        createdAt: '2024-01-10',
+        totalSessionsPrescribed: 30,
+        sessionsRemaining: 25,
+        recoveryRate: 30,
+        satisfactionRate: 8,
+        gamification: {
+          patientId: 'u6',
+          points: 80,
+          delayCount: 0,
+          badges: [],
+          rewards: []
+        }
+      },
+      {
+        id: 'u7',
+        firstName: 'Julien',
+        lastName: 'Bernard',
+        birthDate: '1988-08-30',
+        gender: 'Homme',
+        phone: '06 11 22 33 44',
+        email: 'j.bernard@mail.com',
+        role: UserRole.PATIENT,
+        isActive: true,
+        permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
+        category: PatientCategory.MUTUALISTE,
+        prescribingDoctor: 'Dr. Martin',
+        pathology: 'Lombalgie chronique',
+        antecedents: [],
+        consentRGPD: true,
+        createdAt: '2024-02-20',
+        totalSessionsPrescribed: 10,
+        sessionsRemaining: 2,
+        recoveryRate: 95,
+        satisfactionRate: 10,
+        gamification: {
+          patientId: 'u7',
+          points: 600,
+          delayCount: 0,
+          badges: [],
+          rewards: []
+        }
       }
-    },
-    {
-      id: 'u5',
-      firstName: 'Marc',
-      lastName: 'Lefebvre',
-      birthDate: '1970-03-22',
-      gender: 'Homme',
-      phone: '06 98 76 54 32',
-      email: 'marc.lefe@mail.com',
-      role: UserRole.PATIENT,
-      isActive: true,
-      permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
-      category: PatientCategory.HORS_MUTUELLE,
-      prescribingDoctor: 'Dr. Petit',
-      pathology: 'Lombalgie chronique',
-      antecedents: [],
-      consentRGPD: true,
-      createdAt: '2023-11-15',
-      totalSessionsPrescribed: 15,
-      sessionsRemaining: 5,
-      recoveryRate: 80,
-      satisfactionRate: 10,
-      gamification: {
-        patientId: 'u5',
-        points: 450,
-        delayCount: 1,
-        badges: [],
-        rewards: []
-      }
-    },
-    {
-      id: 'u6',
-      firstName: 'Sophie',
-      lastName: 'Moreau',
-      birthDate: '1992-11-05',
-      gender: 'Femme',
-      phone: '06 55 44 33 22',
-      email: 'sophie.m@mail.com',
-      role: UserRole.PATIENT,
-      isActive: true,
-      permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
-      category: PatientCategory.MUTUALISTE,
-      prescribingDoctor: 'Dr. Roux',
-      pathology: 'Rééducation LCA',
-      antecedents: [],
-      consentRGPD: true,
-      createdAt: '2024-01-10',
-      totalSessionsPrescribed: 30,
-      sessionsRemaining: 25,
-      recoveryRate: 30,
-      satisfactionRate: 8,
-      gamification: {
-        patientId: 'u6',
-        points: 80,
-        delayCount: 0,
-        badges: [],
-        rewards: []
-      }
-    },
-    {
-      id: 'u7',
-      firstName: 'Julien',
-      lastName: 'Bernard',
-      birthDate: '1988-08-30',
-      gender: 'Homme',
-      phone: '06 11 22 33 44',
-      email: 'j.bernard@mail.com',
-      role: UserRole.PATIENT,
-      isActive: true,
-      permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA],
-      category: PatientCategory.MUTUALISTE,
-      prescribingDoctor: 'Dr. Martin',
-      pathology: 'Lombalgie chronique',
-      antecedents: [],
-      consentRGPD: true,
-      createdAt: '2024-02-20',
-      totalSessionsPrescribed: 10,
-      sessionsRemaining: 2,
-      recoveryRate: 95,
-      satisfactionRate: 10,
-      gamification: {
-        patientId: 'u7',
-        points: 600,
-        delayCount: 0,
-        badges: [],
-        rewards: []
-      }
-    }
-  ]);
+    ];
+  });
 
-  const [exercises, setExercises] = useState<Exercise[]>([
-    { id: 'ex1', sessionId: '1', title: 'Renforcement Cheville', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', therapistComment: 'Faire 3 séries de 15 répétitions doucement.', isCompleted: false, date: '2025-05-12' },
-    { id: 'ex2', sessionId: '1', title: 'Équilibre sur un pied', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', therapistComment: 'Tenir 30 secondes sur chaque pied.', isCompleted: true, date: '2025-05-12' }
-  ]);
+  const [exercises, setExercises] = useState<Exercise[]>(() => {
+    return [
+      { id: 'ex1', sessionId: '1', title: 'Renforcement Cheville', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', therapistComment: 'Faire 3 séries de 15 répétitions doucement.', isCompleted: false, date: '2025-05-12' },
+      { id: 'ex2', sessionId: '1', title: 'Équilibre sur un pied', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', therapistComment: 'Tenir 30 secondes sur chaque pied.', isCompleted: true, date: '2025-05-12' }
+    ];
+  });
 
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 'm1', senderId: 'u2', receiverId: 'u4', content: 'Bonjour Alice, comment se passe vos exercices ?', timestamp: new Date().toISOString(), isRead: true }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    return [
+      { id: 'm1', senderId: 'u2', receiverId: 'u4', content: 'Bonjour Alice, comment se passe vos exercices ?', timestamp: new Date().toISOString(), isRead: true }
+    ];
+  });
 
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    { id: '1', patientId: 'u4', patientName: 'Alice Dubois', therapistId: 'u2', date: '2025-05-12', startTime: '09:00', endTime: '09:30', type: 'Cabinet', status: 'Confirmé' },
-    { id: '2', patientId: 'u5', patientName: 'Marc Lefebvre', therapistId: 'u2', date: '2025-05-12', startTime: '10:00', endTime: '10:30', type: 'Cabinet', status: 'Confirmé' },
-    { id: '3', patientId: 'u6', patientName: 'Sophie Moreau', therapistId: 'u1', date: '2025-05-12', startTime: '11:00', endTime: '11:30', type: 'Cabinet', status: 'Confirmé' },
-    { id: '4', patientId: 'u7', patientName: 'Julien Bernard', therapistId: 'u1', date: '2025-05-12', startTime: '14:00', endTime: '14:30', type: 'Cabinet', status: 'Confirmé' },
-    { id: '5', patientId: 'u4', patientName: 'Alice Dubois', therapistId: 'u2', date: '2025-05-13', startTime: '09:00', endTime: '09:30', type: 'Cabinet', status: 'Confirmé' },
-  ]);
+  const [appointments, setAppointments] = useState<Appointment[]>(() => {
+    return [
+      { id: '1', patientId: 'u4', patientName: 'Alice Dubois', therapistId: 'u2', date: '2025-05-12', startTime: '09:00', endTime: '09:30', type: 'Cabinet', status: 'Confirmé' },
+      { id: '2', patientId: 'u5', patientName: 'Marc Lefebvre', therapistId: 'u2', date: '2025-05-12', startTime: '10:00', endTime: '10:30', type: 'Cabinet', status: 'Confirmé' },
+      { id: '3', patientId: 'u6', patientName: 'Sophie Moreau', therapistId: 'u1', date: '2025-05-12', startTime: '11:00', endTime: '11:30', type: 'Cabinet', status: 'Confirmé' },
+      { id: '4', patientId: 'u7', patientName: 'Julien Bernard', therapistId: 'u1', date: '2025-05-12', startTime: '14:00', endTime: '14:30', type: 'Cabinet', status: 'Confirmé' },
+      { id: '5', patientId: 'u4', patientName: 'Alice Dubois', therapistId: 'u2', date: '2025-05-13', startTime: '09:00', endTime: '09:30', type: 'Cabinet', status: 'Confirmé' },
+    ];
+  });
 
-  const [expenses, setExpenses] = useState<Expense[]>([
-    { id: 'e1', label: 'Loyer Cabinet', amount: 8500, date: '2024-05-01', category: 'Loyer', paymentMethod: 'Virement' },
-    { id: 'e2', label: 'Achat Table de Massage', amount: 4200, date: '2024-05-05', category: 'Matériel', paymentMethod: 'Carte' },
-    { id: 'e3', label: 'Logiciel KinéGest Pro', amount: 450, date: '2024-05-10', category: 'Logiciels', paymentMethod: 'Carte' },
-    { id: 'e4', label: 'Consommables (Gels, Draps)', amount: 1200, date: '2024-05-15', category: 'Consommables', paymentMethod: 'Espèces' },
-    { id: 'e5', label: 'Loyer Cabinet', amount: 8500, date: '2024-04-01', category: 'Loyer', paymentMethod: 'Virement' },
-    { id: 'e6', label: 'Electricité', amount: 800, date: '2024-04-10', category: 'Charges', paymentMethod: 'Virement' },
-  ]);
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    return [
+      { id: 'e1', label: 'Loyer Cabinet', amount: 8500, date: '2024-05-01', category: 'Loyer', paymentMethod: 'Virement' },
+      { id: 'e2', label: 'Achat Table de Massage', amount: 4200, date: '2024-05-05', category: 'Matériel', paymentMethod: 'Carte' },
+      { id: 'e3', label: 'Logiciel KinéGest Pro', amount: 450, date: '2024-05-10', category: 'Logiciels', paymentMethod: 'Carte' },
+      { id: 'e4', label: 'Consommables (Gels, Draps)', amount: 1200, date: '2024-05-15', category: 'Consommables', paymentMethod: 'Espèces' },
+      { id: 'e5', label: 'Loyer Cabinet', amount: 8500, date: '2024-04-01', category: 'Loyer', paymentMethod: 'Virement' },
+      { id: 'e6', label: 'Electricité', amount: 800, date: '2024-04-10', category: 'Charges', paymentMethod: 'Virement' },
+    ];
+  });
 
-  const [invoices, setInvoices] = useState<Invoice[]>([
-    { id: 'FAC-2024-001', patientId: 'u4', amount: 3200.00, status: 'Payé', date: '2024-01-15', sessionsCount: 8 },
-    { id: 'FAC-2024-002', patientId: 'u4', amount: 1500.00, status: 'Impayé', date: '2024-05-10', sessionsCount: 4 },
-  ]);
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    return [
+      { id: 'FAC-2024-001', patientId: 'u4', amount: 3200.00, status: 'Payé', date: '2024-01-15', sessionsCount: 8 },
+      { id: 'FAC-2024-002', patientId: 'u4', amount: 1500.00, status: 'Impayé', date: '2024-05-10', sessionsCount: 4 },
+    ];
+  });
 
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([
-    { id: '101', patientId: 'u4', date: '2024-01-05', eva: 7, content: 'Douleur intense au réveil. Oedème persistant. Travail circulatoire et drainage.', objectives: ['Diminuer oedème'], progress: 10 },
-    { id: '102', patientId: 'u4', date: '2024-01-12', eva: 4, content: 'Oedème en nette régression. Amplitudes articulaires : 10° en flexion dorsale. Début proprioception.', objectives: ['Gagner en flexion dorsale'], progress: 35 },
-    { id: '103', patientId: 'u4', date: '2024-01-19', eva: 2, content: 'Marche sans boiterie. Proprioception sur plan stable OK. Début fentes légères.', objectives: ['Stabilisation'], progress: 60 },
-  ]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>(() => {
+    return [];
+  });
+
+  const [sessionNotes, setSessionNotes] = useState<SessionNote[]>(() => {
+    return [
+      { id: '101', patientId: 'u4', date: '2024-01-05', eva: 7, content: 'Douleur intense au réveil. Oedème persistant. Travail circulatoire et drainage.', objectives: ['Diminuer oedème'], progress: 10 },
+      { id: '102', patientId: 'u4', date: '2024-01-12', eva: 4, content: 'Oedème en nette régression. Amplitudes articulaires : 10° en flexion dorsale. Début proprioception.', objectives: ['Gagner en flexion dorsale'], progress: 35 },
+      { id: '103', patientId: 'u4', date: '2024-01-19', eva: 2, content: 'Marche sans boiterie. Proprioception sur plan stable OK. Début fentes légères.', objectives: ['Stabilisation'], progress: 60 },
+    ];
+  });
+
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    return [];
+  });
   const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('kinegest_users');
-    
     const defaultPermissions = {
       [UserRole.ADMIN]: Object.values(UserPermission),
       [UserRole.THERAPEUTE]: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_PATIENTS, UserPermission.VIEW_MEDICAL_RECORDS, UserPermission.MANAGE_AGENDA, UserPermission.DELETE_APPOINTMENT],
@@ -244,7 +262,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       [UserRole.PATIENT]: [UserPermission.VIEW_DASHBOARD, UserPermission.MANAGE_AGENDA]
     };
 
-    let initialUsers = saved ? JSON.parse(saved) : [
+    let initialUsers = [
       { id: 'u1', firstName: 'Jean', lastName: 'Dupont', email: 'reforme3334@gmail.com', password: 'admin', role: UserRole.ADMIN, isActive: true, permissions: defaultPermissions[UserRole.ADMIN] },
       { id: 'u2', firstName: 'Sarah', lastName: 'Lemoine', email: 'therapeute@kinegest.com', password: 'password', role: UserRole.THERAPEUTE, isActive: true, permissions: defaultPermissions[UserRole.THERAPEUTE] },
       { id: 'u3', firstName: 'Marc', lastName: 'Vasseur', email: 'secretaire@kinegest.com', password: 'password', role: UserRole.SECRETAIRE, isActive: true, permissions: defaultPermissions[UserRole.SECRETAIRE] },
@@ -288,9 +306,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return user;
   });
 
+  const [isLoaded, setIsLoaded] = useState(false);
+
   useEffect(() => {
-    localStorage.setItem('kinegest_users', JSON.stringify(users));
-  }, [users]);
+    const loadFromBackend = async () => {
+      try {
+        const response = await fetch('/api/state');
+        const data = await response.json();
+        if (data && Object.keys(data).length > 0) {
+          if (data.patients) setPatients(data.patients);
+          if (data.appointments) setAppointments(data.appointments);
+          if (data.expenses) setExpenses(data.expenses);
+          if (data.invoices) setInvoices(data.invoices);
+          if (data.assessments) setAssessments(data.assessments);
+          if (data.sessionNotes) setSessionNotes(data.sessionNotes);
+          if (data.notifications) setNotifications(data.notifications);
+          if (data.users) setUsers(data.users);
+          if (data.exercises) setExercises(data.exercises);
+          if (data.messages) setMessages(data.messages);
+        }
+      } catch (error) {
+        console.error("Failed to load state from backend:", error);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadFromBackend();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const saveToBackend = async () => {
+      try {
+        await fetch('/api/state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patients, appointments, expenses, invoices, assessments, sessionNotes, notifications, users, exercises, messages
+          })
+        });
+      } catch (error) {
+        console.error("Failed to save state to backend:", error);
+      }
+    };
+
+    const timeout = setTimeout(saveToBackend, 1000);
+    return () => clearTimeout(timeout);
+  }, [isLoaded, patients, appointments, expenses, invoices, assessments, sessionNotes, notifications, users, exercises, messages]);
 
   useEffect(() => {
     if (currentUser) {
