@@ -68,15 +68,15 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Bonjour, {currentUser?.firstName}</h2>
-          <p className="text-slate-500">Voici un résumé de l'activité de votre cabinet aujourd'hui.</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Bonjour, {currentUser?.firstName}</h2>
+          <p className="text-sm md:text-base text-slate-500">Voici un résumé de l'activité de votre cabinet aujourd'hui.</p>
         </div>
         {canManagePatients && (
           <button 
             onClick={() => setPatientModalOpen(true)}
-            className="bg-sky-600 text-white px-6 py-2 rounded-xl font-semibold hover:bg-sky-700 transition-colors shadow-lg shadow-sky-100"
+            className="w-full md:w-auto bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-sky-700 transition-colors shadow-lg shadow-sky-100"
           >
             + Nouveau Patient
           </button>

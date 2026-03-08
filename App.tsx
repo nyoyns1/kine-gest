@@ -14,10 +14,9 @@ import PatientDetail from './views/PatientDetail';
 import PatientPortal from './views/PatientPortal';
 import { AppProvider, useStore } from './store';
 import { PatientCategory, AppointmentType, UserRole, UserPermission } from './types';
-import { Settings, LogOut, User as UserIcon, ShieldAlert, User, Mail, Phone, MapPin, CreditCard, Calendar, Stethoscope, AlertCircle, X } from 'lucide-react';
+import { Settings, LogOut, User as UserIcon, ShieldAlert, User, Mail, Phone, MapPin, CreditCard, Calendar, Stethoscope, AlertCircle, X, Menu } from 'lucide-react';
 
-const Sidebar = () => {
-// ... (rest of Sidebar code)
+const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
   const location = useLocation();
   const { notifications, currentUser } = useStore();
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -36,45 +35,64 @@ const Sidebar = () => {
   );
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 h-screen sticky top-0 flex flex-col z-20">
-      <div className="p-6 text-center md:text-left">
-        <h1 className="text-2xl font-bold text-sky-600 flex items-center gap-2 justify-center md:justify-start">
-          <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
-            <div className="w-4 h-4 bg-sky-600 rounded-sm"></div>
-          </div>
-          KinéGest
-        </h1>
-      </div>
-      <nav className="flex-1 px-4 space-y-1">
-        {filteredItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-              location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
-                ? 'bg-sky-50 text-sky-600 font-semibold'
-                : 'text-slate-500 hover:bg-slate-50'
-            }`}
-          >
-            <item.icon />
-            <span className="hidden md:inline">{item.name}</span>
-          </Link>
-        ))}
-      </nav>
-      {currentUser && (
-        <div className="p-4 border-t border-slate-100">
-          <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl">
-              <div className="w-10 h-10 rounded-full bg-sky-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-                {currentUser.firstName?.charAt(0)}{currentUser.lastName?.charAt(0)}
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={`
+        fixed lg:sticky top-0 left-0 z-50 lg:z-20
+        w-64 bg-white border-r border-slate-200 h-screen 
+        flex flex-col transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="p-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-sky-600 flex items-center gap-2">
+            <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+              <div className="w-4 h-4 bg-sky-600 rounded-sm"></div>
+            </div>
+            KinéGest
+          </h1>
+          <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:bg-slate-50 rounded-xl">
+            <X size={20} />
+          </button>
+        </div>
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+          {filteredItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))
+                  ? 'bg-sky-50 text-sky-600 font-semibold'
+                  : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              <item.icon />
+              <span>{item.name}</span>
+            </Link>
+          ))}
+        </nav>
+        {currentUser && (
+          <div className="p-4 border-t border-slate-100">
+            <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl">
+                <div className="w-10 h-10 rounded-full bg-sky-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                  {currentUser.firstName?.charAt(0)}{currentUser.lastName?.charAt(0)}
+                </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-semibold truncate">{currentUser.firstName} {currentUser.lastName}</p>
+                <p className="text-xs text-slate-500 truncate">{currentUser.role}</p>
               </div>
-            <div className="flex-1 overflow-hidden hidden md:block">
-              <p className="text-sm font-semibold truncate">{currentUser.firstName} {currentUser.lastName}</p>
-              <p className="text-xs text-slate-500 truncate">{currentUser.role}</p>
             </div>
           </div>
-        </div>
-      )}
-    </aside>
+        )}
+      </aside>
+    </>
   );
 };
 
@@ -598,6 +616,7 @@ const NotificationCenter = () => {
 const Layout = () => {
   const { currentUser, logout, isLoaded, setIsLoaded, saveStatus, showToast } = useStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -653,28 +672,36 @@ const Layout = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <main className="flex-1 overflow-y-auto w-full">
         <div className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 px-4 md:px-8 py-4 flex justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            {saveStatus === 'saving' && (
-              <div className="flex items-center gap-2 text-slate-400 animate-pulse">
-                <div className="w-2 h-2 bg-sky-500 rounded-full"></div>
-                <span className="text-xs font-medium">Sauvegarde...</span>
-              </div>
-            )}
-            {saveStatus === 'saved' && (
-              <div className="flex items-center gap-2 text-emerald-500">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-xs font-medium">Enregistré</span>
-              </div>
-            )}
-            {saveStatus === 'error' && (
-              <div className="flex items-center gap-2 text-red-500">
-                <ShieldAlert size={14} />
-                <span className="text-xs font-medium">Erreur de sauvegarde</span>
-              </div>
-            )}
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 text-slate-600 hover:bg-white rounded-xl transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+            <div className="flex items-center gap-2">
+              {saveStatus === 'saving' && (
+                <div className="flex items-center gap-2 text-slate-400 animate-pulse">
+                  <div className="w-2 h-2 bg-sky-500 rounded-full"></div>
+                  <span className="text-xs font-medium hidden sm:inline">Sauvegarde...</span>
+                </div>
+              )}
+              {saveStatus === 'saved' && (
+                <div className="flex items-center gap-2 text-emerald-500">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                  <span className="text-xs font-medium hidden sm:inline">Enregistré</span>
+                </div>
+              )}
+              {saveStatus === 'error' && (
+                <div className="flex items-center gap-2 text-red-500">
+                  <ShieldAlert size={14} />
+                  <span className="text-xs font-medium hidden sm:inline">Erreur</span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <NotificationCenter />

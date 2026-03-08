@@ -205,71 +205,71 @@ const Stats: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-end">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">Reporting Avancé</h2>
-          <p className="text-slate-500">Analyses détaillées de la charge de travail, démographie et performance financière.</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">Reporting Avancé</h2>
+          <p className="text-sm md:text-base text-slate-500">Analyses détaillées de la charge de travail, démographie et performance financière.</p>
         </div>
-        <div className="text-right hidden md:block">
+        <div className="text-left hidden md:block">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dernière mise à jour</p>
           <p className="text-sm font-medium text-slate-600">{format(new Date(), 'dd MMMM yyyy HH:mm', { locale: fr })}</p>
         </div>
       </header>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-sky-50 text-sky-600 rounded-lg">
               <DollarSign size={20} />
             </div>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Profit</span>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">Profit</span>
           </div>
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Bénéfice Net</p>
-          <p className="text-2xl font-bold mt-1">{totalProfit.toLocaleString('fr-FR')} DH</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Bénéfice Net</p>
+          <p className="text-xl md:text-2xl font-bold mt-1">{totalProfit.toLocaleString('fr-FR')} DH</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
               <TrendingUp size={20} />
             </div>
-            <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-full">Dépenses</span>
+            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full uppercase">Coûts</span>
           </div>
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Dépenses</p>
-          <p className="text-2xl font-bold mt-1">{totalExpenses.toLocaleString('fr-FR')} DH</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Dépenses</p>
+          <p className="text-xl md:text-2xl font-bold mt-1">{totalExpenses.toLocaleString('fr-FR')} DH</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
               <Users size={20} />
             </div>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+5</span>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">+5</span>
           </div>
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Patients</p>
-          <p className="text-2xl font-bold mt-1">{totalPatients}</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Patients</p>
+          <p className="text-xl md:text-2xl font-bold mt-1">{totalPatients}</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-violet-50 text-violet-600 rounded-lg">
               <Calendar size={20} />
             </div>
-            <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">Stable</span>
+            <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full uppercase">Stable</span>
           </div>
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Volume Séances</p>
-          <p className="text-2xl font-bold mt-1">{totalSessions}</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Volume Séances</p>
+          <p className="text-xl md:text-2xl font-bold mt-1">{totalSessions}</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
               <CreditCard size={20} />
             </div>
           </div>
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Panier Moyen</p>
-          <p className="text-2xl font-bold mt-1">{averageRevenuePerPatient.toLocaleString('fr-FR')} DH</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Panier Moyen</p>
+          <p className="text-xl md:text-2xl font-bold mt-1">{averageRevenuePerPatient.toLocaleString('fr-FR')} DH</p>
         </div>
       </div>
 

@@ -76,15 +76,15 @@ const Agenda: React.FC = () => {
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">Agenda Interactif</h2>
-          <p className="text-slate-500">Cliquez sur un créneau pour planifier. Cliquez sur le symbole "$" pour facturer.</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">Agenda Interactif</h2>
+          <p className="text-sm md:text-base text-slate-500">Cliquez sur un créneau pour planifier.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           {!isPatient && (
             <select
               value={patientFilter}
               onChange={(e) => setPatientFilter(e.target.value)}
-              className="bg-white border border-slate-200 rounded-xl px-4 py-1.5 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-sky-500 shadow-sm"
+              className="w-full sm:w-auto bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-sky-500 shadow-sm"
             >
               <option value="all">Tous les patients</option>
               {patients.map(p => (
@@ -92,23 +92,24 @@ const Agenda: React.FC = () => {
               ))}
             </select>
           )}
-          <div className="bg-white border border-slate-200 rounded-xl flex p-1 shadow-sm">
-            <button className="px-4 py-1.5 text-xs font-bold rounded-lg bg-sky-50 text-sky-600">Semaine</button>
-            <button className="px-4 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50">Mois</button>
-            <button className="px-4 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50">Jour</button>
+          <div className="flex gap-2">
+            <div className="bg-white border border-slate-200 rounded-xl flex p-1 shadow-sm flex-1 sm:flex-none">
+              <button className="flex-1 sm:px-4 py-1.5 text-xs font-bold rounded-lg bg-sky-50 text-sky-600">Semaine</button>
+              <button className="flex-1 sm:px-4 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50">Jour</button>
+            </div>
+            {canManageAgenda && (
+              <button 
+                onClick={() => {
+                  setPrefilledDate(new Date().toISOString().split('T')[0]);
+                  setPrefilledTime('08:00');
+                  setAppointmentModalOpen(true);
+                }}
+                className="flex-1 sm:flex-none bg-sky-600 text-white px-4 py-1.5 rounded-xl font-semibold hover:bg-sky-700 transition-all text-sm shadow-lg shadow-sky-100"
+              >
+                + RDV
+              </button>
+            )}
           </div>
-          {canManageAgenda && (
-            <button 
-              onClick={() => {
-                setPrefilledDate(new Date().toISOString().split('T')[0]);
-                setPrefilledTime('08:00');
-                setAppointmentModalOpen(true);
-              }}
-              className="bg-sky-600 text-white px-4 py-1.5 rounded-xl font-semibold hover:bg-sky-700 transition-all text-sm shadow-lg shadow-sky-100"
-            >
-              Nouveau RDV
-            </button>
-          )}
         </div>
       </header>
 

@@ -51,14 +51,14 @@ const Admin: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-end">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">Gestion des Accès</h2>
-          <p className="text-slate-500">Configurez les droits et permissions de chaque utilisateur.</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">Gestion des Accès</h2>
+          <p className="text-sm md:text-base text-slate-500">Configurez les droits et permissions de chaque utilisateur.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-sky-600 text-white px-6 py-2.5 rounded-2xl font-bold flex items-center gap-2 hover:bg-sky-700 transition-all shadow-lg shadow-sky-100 active:scale-95"
+          className="w-full md:w-auto bg-sky-600 text-white px-6 py-2.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-sky-700 transition-all shadow-lg shadow-sky-100 active:scale-95"
         >
           <UserPlus size={18} />
           Nouvel Employé

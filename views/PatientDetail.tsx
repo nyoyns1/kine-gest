@@ -92,35 +92,37 @@ const PatientDetail: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate('/patients')}
-          className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-800 transition-colors"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <div>
-          <h2 className="text-2xl font-bold">
-            {patient.lastName || patient.firstName ? `${patient.lastName} ${patient.firstName}` : 'Patient sans nom'}
-          </h2>
-          <p className="text-sm text-slate-500">ID: #{patient.id} • {patient.pathology}</p>
+      <header className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <button 
+            onClick={() => navigate('/patients')}
+            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-800 transition-colors"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl md:text-2xl font-bold truncate">
+              {patient.lastName || patient.firstName ? `${patient.lastName} ${patient.firstName}` : 'Patient sans nom'}
+            </h2>
+            <p className="text-xs md:text-sm text-slate-500 truncate">ID: #{patient.id} • {patient.pathology}</p>
+          </div>
         </div>
-        <div className="ml-auto flex gap-3">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:ml-auto">
           {isConfirmingDelay ? (
-            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-200">
-              <span className="text-[10px] font-bold text-amber-600 uppercase">Confirmer le retard ?</span>
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-200 bg-amber-50 p-1.5 rounded-xl border border-amber-100 flex-1 justify-center">
+              <span className="text-[10px] font-bold text-amber-600 uppercase whitespace-nowrap">Retard ?</span>
               <button 
                 onClick={() => {
                   reportPatientDelay(patient.id);
                   setIsConfirmingDelay(false);
                 }}
-                className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-all shadow-sm"
+                className="px-3 py-1 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition-all shadow-sm"
               >
                 OUI
               </button>
               <button 
                 onClick={() => setIsConfirmingDelay(false)}
-                className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+                className="px-3 py-1 bg-white text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-all border border-slate-200"
               >
                 NON
               </button>
@@ -129,21 +131,21 @@ const PatientDetail: React.FC = () => {
             <button 
               type="button"
               onClick={() => setIsConfirmingDelay(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-all border border-amber-100 active:scale-95"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-xs font-semibold hover:bg-amber-100 transition-all border border-amber-100 active:scale-95"
             >
               <Clock size={16} />
-              Signaler Retard
+              Retard
             </button>
           )}
           <button 
             onClick={() => setIsEditModalOpen(true)}
-            className="hidden md:block px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold hover:bg-white transition-colors"
+            className="flex-1 md:flex-none px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold hover:bg-white transition-colors flex items-center justify-center"
           >
             Modifier
           </button>
           <button 
             onClick={handleNewRDV}
-            className="px-4 py-2 bg-sky-600 text-white rounded-xl text-sm font-semibold hover:bg-sky-700 transition-colors shadow-lg shadow-sky-100"
+            className="flex-1 md:flex-none px-4 py-2 bg-sky-600 text-white rounded-xl text-xs font-semibold hover:bg-sky-700 transition-colors shadow-lg shadow-sky-100 flex items-center justify-center"
           >
             Nouveau RDV
           </button>

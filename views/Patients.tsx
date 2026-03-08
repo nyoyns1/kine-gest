@@ -27,12 +27,12 @@ const Patients: React.FC = () => {
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">Gestion des Patients</h2>
-          <p className="text-slate-500">Gérez votre base de patients et leurs dossiers médicaux.</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">Gestion des Patients</h2>
+          <p className="text-sm md:text-base text-slate-500">Gérez votre base de patients et leurs dossiers médicaux.</p>
         </div>
         <button 
           onClick={() => setPatientModalOpen(true)}
-          className="bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-sky-700 transition-all flex items-center justify-center gap-2"
+          className="w-full md:w-auto bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-sky-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-100"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           Nouveau Patient
