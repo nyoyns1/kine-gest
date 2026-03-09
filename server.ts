@@ -56,10 +56,16 @@ async function startServer() {
   });
 
   app.post("/api/state", async (req, res) => {
+    const tempFile = `${DATA_FILE}.tmp`;
     try {
-      await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2), "utf-8");
+      const content = JSON.stringify(req.body, null, 2);
+      await fs.writeFile(tempFile, content, "utf-8");
+      await fs.rename(tempFile, DATA_FILE);
       res.json({ status: "ok" });
     } catch (error) {
+      console.error("Failed to save state:", error);
+      // Clean up temp file if it exists
+      try { if (existsSync(tempFile)) await fs.unlink(tempFile); } catch (e) {}
       res.status(500).json({ error: "Failed to save state" });
     }
   });
