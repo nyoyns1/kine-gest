@@ -8,18 +8,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(process.cwd(), "data.json");
 
-// Mock User Roles
-enum UserRole {
-  ADMIN = 'Admin',
-  THERAPEUTE = 'Thérapeute',
-  SECRETAIRE = 'Secrétaire',
-  PATIENT = 'Patient'
-}
+// Mock User Roles (using plain object for better compatibility with Node type stripping)
+const UserRole = {
+  ADMIN: 'Admin',
+  THERAPEUTE: 'Thérapeute',
+  SECRETAIRE: 'Secrétaire',
+  PATIENT: 'Patient'
+} as const;
+
+type UserRoleType = typeof UserRole[keyof typeof UserRole];
 
 // Middleware to check roles
-const checkRole = (allowedRoles: UserRole[]) => {
+const checkRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const userRole = req.headers['x-user-role'] as UserRole;
+    const userRole = req.headers['x-user-role'] as string;
     if (!userRole) return res.status(401).json({ error: "Non authentifié" });
     if (!allowedRoles.includes(userRole)) return res.status(403).json({ error: "Accès interdit" });
     next();
@@ -76,8 +78,8 @@ async function startServer() {
   });
 
   // Vite or Static
-  const isProduction = process.env.NODE_ENV === "production";
-  const distPath = path.join(__dirname, "dist");
+  const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  const distPath = path.join(process.cwd(), "dist");
 
   if (!isProduction && !process.env.VERCEL) {
     console.log("Starting in DEVELOPMENT mode with Vite");
@@ -92,10 +94,12 @@ async function startServer() {
     app.use(express.static(distPath));
     app.get("*all", (req, res) => {
       const indexHtmlPath = path.join(distPath, "index.html");
+      console.log(`Serving SPA fallback: ${indexHtmlPath} for request: ${req.url}`);
       if (existsSync(indexHtmlPath)) {
         res.sendFile(indexHtmlPath);
       } else {
-        res.status(404).send("Not found");
+        console.error(`Index file not found at: ${indexHtmlPath}`);
+        res.status(404).send("Application not built correctly. Please check build logs.");
       }
     });
   }
