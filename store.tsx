@@ -301,61 +301,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (data.exercises) setExercises(data.exercises);
           if (data.messages) setMessages(data.messages);
           if (data.users) setUsers(data.users);
-          
-          // Backup to localStorage
-          localStorage.setItem('kinegest_backup', JSON.stringify(data));
         } else {
-          // Try to load from backup first
-          const backup = localStorage.getItem('kinegest_backup');
-          if (backup) {
-            const backupData = JSON.parse(backup);
-            setPatients(backupData.patients || []);
-            setAppointments(backupData.appointments || []);
-            setExpenses(backupData.expenses || []);
-            setInvoices(backupData.invoices || []);
-            setSessionNotes(backupData.sessionNotes || []);
-            setExercises(backupData.exercises || []);
-            setMessages(backupData.messages || []);
-            setUsers(backupData.users || []);
-            showToast("Données chargées depuis la sauvegarde locale");
-          } else {
-            // First time load or empty server, use mock data
-            setPatients(MOCK_DATA.patients);
-            setAppointments(MOCK_DATA.appointments);
-            setExpenses(MOCK_DATA.expenses);
-            setInvoices(MOCK_DATA.invoices);
-            setSessionNotes(MOCK_DATA.sessionNotes);
-            setExercises(MOCK_DATA.exercises);
-            setMessages(MOCK_DATA.messages);
-            setUsers(MOCK_DATA.users);
-          }
+          // First time load or empty server, use mock data
+          setPatients(MOCK_DATA.patients);
+          setAppointments(MOCK_DATA.appointments);
+          setExpenses(MOCK_DATA.expenses);
+          setInvoices(MOCK_DATA.invoices);
+          setSessionNotes(MOCK_DATA.sessionNotes);
+          setExercises(MOCK_DATA.exercises);
+          setMessages(MOCK_DATA.messages);
+          setUsers(MOCK_DATA.users);
         }
         setHasSuccessfullyLoaded(true);
       } catch (error) {
         console.error("Failed to load state from backend:", error);
-        
-        // Try to load from backup on failure
-        const backup = localStorage.getItem('kinegest_backup');
-        if (backup) {
-          const backupData = JSON.parse(backup);
-          setPatients(backupData.patients || []);
-          setAppointments(backupData.appointments || []);
-          setExpenses(backupData.expenses || []);
-          setInvoices(backupData.invoices || []);
-          setSessionNotes(backupData.sessionNotes || []);
-          setExercises(backupData.exercises || []);
-          setMessages(backupData.messages || []);
-          setUsers(backupData.users || []);
-          setHasSuccessfullyLoaded(true); // Allow saving if we have a backup
-          showToast("Mode hors-ligne : Données chargées depuis la sauvegarde locale");
-        } else {
-          showToast("Erreur de connexion au serveur. Certaines données peuvent être manquantes.");
-        }
+        showToast("Erreur de connexion au serveur. Certaines données peuvent être manquantes.");
       } finally {
         setIsLoaded(true);
       }
     };
     loadFromBackend();
+    
+    // Cleanup any existing local backups to respect privacy request
+    localStorage.removeItem('kinegest_backup');
   }, []);
 
   useEffect(() => {
@@ -367,9 +335,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         patients, appointments, expenses, invoices, assessments, sessionNotes, notifications, users, exercises, messages
       };
       
-      // Always backup to localStorage first
-      localStorage.setItem('kinegest_backup', JSON.stringify(stateToSave));
-
       try {
         const response = await fetch('/api/state', {
           method: 'POST',
