@@ -6,7 +6,7 @@ import { existsSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_FILE = path.join(__dirname, "data.json");
+const DATA_FILE = path.join(process.cwd(), "data.json");
 
 // Mock User Roles
 enum UserRole {
@@ -90,7 +90,7 @@ async function startServer() {
   } else {
     console.log("Starting in PRODUCTION mode");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*all", (req, res) => {
       const indexHtmlPath = path.join(distPath, "index.html");
       if (existsSync(indexHtmlPath)) {
         res.sendFile(indexHtmlPath);

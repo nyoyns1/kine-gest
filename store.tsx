@@ -271,53 +271,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   useEffect(() => {
-    const loadFromBackend = async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // Increased timeout
+    const loadFromBackend = async (retries = 3, delay = 1000) => {
+      for (let i = 0; i < retries; i++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-      try {
-        const response = await fetch('/api/state', { signal: controller.signal });
-        clearTimeout(timeoutId);
+        try {
+          const response = await fetch('/api/state', { signal: controller.signal });
+          clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          throw new Error(`Server returned ${response.status}`);
-        }
-        
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid content type from server");
-        }
+          if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+          }
+          
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("Invalid content type from server");
+          }
 
-        const data = await response.json();
-        
-        if (data && Object.keys(data).length > 0) {
-          if (data.patients) setPatients(data.patients);
-          if (data.appointments) setAppointments(data.appointments);
-          if (data.expenses) setExpenses(data.expenses);
-          if (data.invoices) setInvoices(data.invoices);
-          if (data.assessments) setAssessments(data.assessments);
-          if (data.sessionNotes) setSessionNotes(data.sessionNotes);
-          if (data.notifications) setNotifications(data.notifications);
-          if (data.exercises) setExercises(data.exercises);
-          if (data.messages) setMessages(data.messages);
-          if (data.users) setUsers(data.users);
-        } else {
-          // First time load or empty server, use mock data
-          setPatients(MOCK_DATA.patients);
-          setAppointments(MOCK_DATA.appointments);
-          setExpenses(MOCK_DATA.expenses);
-          setInvoices(MOCK_DATA.invoices);
-          setSessionNotes(MOCK_DATA.sessionNotes);
-          setExercises(MOCK_DATA.exercises);
-          setMessages(MOCK_DATA.messages);
-          setUsers(MOCK_DATA.users);
+          const data = await response.json();
+          
+          if (data && Object.keys(data).length > 0) {
+            if (data.patients) setPatients(data.patients);
+            if (data.appointments) setAppointments(data.appointments);
+            if (data.expenses) setExpenses(data.expenses);
+            if (data.invoices) setInvoices(data.invoices);
+            if (data.assessments) setAssessments(data.assessments);
+            if (data.sessionNotes) setSessionNotes(data.sessionNotes);
+            if (data.notifications) setNotifications(data.notifications);
+            if (data.exercises) setExercises(data.exercises);
+            if (data.messages) setMessages(data.messages);
+            if (data.users) setUsers(data.users);
+          } else {
+            // First time load or empty server, use mock data
+            setPatients(MOCK_DATA.patients);
+            setAppointments(MOCK_DATA.appointments);
+            setExpenses(MOCK_DATA.expenses);
+            setInvoices(MOCK_DATA.invoices);
+            setSessionNotes(MOCK_DATA.sessionNotes);
+            setExercises(MOCK_DATA.exercises);
+            setMessages(MOCK_DATA.messages);
+            setUsers(MOCK_DATA.users);
+          }
+          setHasSuccessfullyLoaded(true);
+          setIsLoaded(true);
+          return; // Success!
+        } catch (error) {
+          console.error(`Attempt ${i + 1} failed to load state:`, error);
+          clearTimeout(timeoutId);
+          
+          if (i === retries - 1) {
+            const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+            showToast(`Erreur de connexion au serveur : ${errorMessage}. Veuillez rafraîchir la page.`);
+            setIsLoaded(true);
+          } else {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+          }
         }
-        setHasSuccessfullyLoaded(true);
-      } catch (error) {
-        console.error("Failed to load state from backend:", error);
-        showToast("Erreur de connexion au serveur. Certaines données peuvent être manquantes.");
-      } finally {
-        setIsLoaded(true);
       }
     };
     loadFromBackend();
